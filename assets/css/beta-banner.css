@@ -1,0 +1,162 @@
+/**
+ * Beta Banner Styles for Bloxer Platform
+ */
+
+.beta-banner {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 8px 16px;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 500;
+    z-index: 9999;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    animation: slideDown 0.5s ease-out;
+}
+
+.beta-banner .beta-icon {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255,255,255,0.2);
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.beta-banner .beta-text {
+    flex: 1;
+    text-align: center;
+}
+
+.beta-banner .discord-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(88, 101, 242, 0.9);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    border: none;
+    font-size: 13px;
+}
+
+.beta-banner .discord-link:hover {
+    background: rgba(88, 101, 242, 1);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(88, 101, 242, 0.3);
+}
+
+.beta-banner .discord-link i {
+    font-size: 16px;
+}
+
+.beta-banner .close-banner {
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255,255,255,0.2);
+    border: none;
+    color: white;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 12px;
+}
+
+.beta-banner .close-banner:hover {
+    background: rgba(255,255,255,0.3);
+}
+
+/* Push content down when banner is visible */
+body.has-beta-banner {
+    padding-top: 50px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .beta-banner {
+        flex-direction: column;
+        gap: 8px;
+        padding: 12px 16px;
+        font-size: 13px;
+    }
+    
+    .beta-banner .beta-text {
+        text-align: center;
+        line-height: 1.4;
+    }
+    
+    .beta-banner .close-banner {
+        position: absolute;
+        right: 12px;
+        top: 8px;
+    }
+    
+    body.has-beta-banner {
+        padding-top: 70px;
+    }
+}
+
+/* Animation */
+@keyframes slideDown {
+    from {
+        transform: translateY(-100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+}
+
+.beta-banner.hiding {
+    animation: fadeOut 0.3s ease-out forwards;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .beta-banner {
+        background: linear-gradient(135deg, #4c1d95 0%, #5b21b6 100%);
+    }
+    
+    .beta-banner .discord-link {
+        background: rgba(88, 101, 242, 0.8);
+    }
+    
+    .beta-banner .discord-link:hover {
+        background: rgba(88, 101, 242, 1);
+    }
+}

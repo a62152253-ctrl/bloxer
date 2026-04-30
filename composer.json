@@ -1,0 +1,18 @@
+{
+    "name": "bloxer/chat-websocket",
+    "description": "Real-time chat system for Bloxer platform",
+    "require": {
+        "php": ">=7.4",
+        "ratchet/pawl": "^0.4.0",
+        "ratchet/rfc6455": "^0.2.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Bloxer\\": "src/"
+        }
+    },
+    "scripts": {
+        "start": "php websocket_server.php",
+        "install-deps": "composer install"
+    }
+}

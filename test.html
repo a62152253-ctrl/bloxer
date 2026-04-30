@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <title>Bloxer Live Preview Test</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      background: #050816;
+      color: #e5e7eb;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .card {
+      background: #0b1020;
+      border: 1px solid #1f2937;
+      padding: 24px 32px;
+      border-radius: 16px;
+      box-shadow: 0 18px 45px rgba(0,0,0,0.6);
+      text-align: center;
+    }
+    h1 {
+      margin: 0 0 8px;
+      font-size: 24px;
+    }
+    p {
+      margin: 0 0 16px;
+      color: #9ca3af;
+    }
+    button {
+      padding: 8px 18px;
+      border-radius: 999px;
+      border: none;
+      background: #6366f1;
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #4f46e5;
+    }
+    #counter {
+      font-weight: 700;
+      color: #22c55e;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Bloxer Live Preview</h1>
+    <p>Kliknij przycisk i zobacz, czy podgląd reaguje.</p>
+    <p>Licznik: <span id="counter">0</span></p>
+    <button id="btn">Kliknij mnie</button>
+  </div>
+
+  <script>
+    const btn = document.getElementById('btn');
+    const counter = document.getElementById('counter');
+    let value = 0;
+
+    btn.addEventListener('click', () => {
+      value++;
+      counter.textContent = value;
+    });
+  </script>
+</body>
+</html>

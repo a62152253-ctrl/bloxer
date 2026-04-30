@@ -1,16 +1,17 @@
 <?php
-require_once 'mainlogincore.php';
+// Bloxer Application Router
+require_once 'bootstrap.php';
 
 $auth = new AuthCore();
 
 if ($auth->isLoggedIn()) {
     if ($auth->isDeveloper()) {
-        header('Location: dashboard.php');
+        SecurityUtils::safeRedirect('controllers/core/dashboard.php');
     } else {
-        header('Location: marketplace.php');
+        SecurityUtils::safeRedirect('controllers/marketplace/marketplace.php');
     }
 } else {
-    header('Location: login.php');
+    SecurityUtils::safeRedirect('controllers/auth/login.php');
 }
-exit();
+return;
 ?>
