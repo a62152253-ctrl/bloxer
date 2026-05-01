@@ -6,7 +6,7 @@
   },
   "deploy": {
     "startCommand": "php -S 0.0.0.0:3000 -t public",
-    "healthcheckPath": "/health.php"
+    "healthcheckPath": "/"
   },
   "environment": {
     "PHP_VERSION": "8.2",
