@@ -23,8 +23,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $_POST['action'] === 'publish_app')
     $price = 0; // All apps are now free
     $tags = $_POST['tags'] ?? '';
     $thumbnail_url = trim($_POST['thumbnail_url'] ?? '');
+    $demo_url = trim($_POST['demo_url'] ?? '');
+    $zip_url = trim($_POST['zip_url'] ?? '');
     
-    if ($project_id && !empty($title) && !empty($description) && !empty($category)) {
+    if ($project_id && !empty($title) && !empty($description) && !empty($category) && !empty($demo_url) && !empty($zip_url)) {
         $conn = $auth->getConnection();
         
         // Check if project exists and belongs to user
@@ -50,17 +52,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $_POST['action'] === 'publish_app')
             $stmt = $conn->prepare("
                 INSERT INTO apps (
                     project_id, title, slug, description, short_description, 
-                    category, tags, thumbnail_url, price, is_free, 
+                    category, tags, thumbnail_url, demo_url, zip_url, price, is_free, 
                     status, published_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'published', NOW())
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'published', NOW())
             ");
             
             $is_free = true; // All apps are now free
             $tags_array = !empty($tags) ? json_encode(explode(',', $tags)) : null;
             
-            $stmt->bind_param("issssssddi", 
+            $stmt->bind_param("issssssssddi", 
                 $project_id, $title, $slug, $description, $short_description,
-                $category, $tags_array, $thumbnail_url, $price, $is_free
+                $category, $tags_array, $thumbnail_url, $demo_url, $zip_url, $price, $is_free
             );
             
             if ($stmt->execute()) {
@@ -592,6 +594,20 @@ $published_apps = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
                         <label for="thumbnail_url">Thumbnail URL</label>
                         <input type="url" id="thumbnail_url" name="thumbnail_url" 
                                placeholder="https://example.com/thumbnail.jpg">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="demo_url">Demo URL *</label>
+                        <input type="url" id="demo_url" name="demo_url" required
+                               placeholder="https://example.com/demo">
+                        <small>Link do działającej demonstracji aplikacji</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="zip_url">Download ZIP URL *</label>
+                        <input type="url" id="zip_url" name="zip_url" required
+                               placeholder="https://example.com/app.zip">
+                        <small>Link do pliku ZIP z kodem źródłowym aplikacji</small>
                     </div>
                     
                     <div class="form-actions">

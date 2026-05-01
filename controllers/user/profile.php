@@ -864,28 +864,16 @@ if ($check_table->num_rows > 0) {
                     <i class="fas fa-store"></i>
                     <span>Bloxer</span>
                 </a>
+                <a href="../marketplace/marketplace.php" class="btn btn-secondary" style="margin-top: 12px; width: 100%; text-align: center; font-size: 12px; padding: 8px;">
+                    <i class="fas fa-arrow-left"></i>
+                    Powrót do Marketplace
+                </a>
             </div>
             
             <nav class="profile-sidebar-nav">
                 <a href="?page=profile" class="profile-nav-item active">
                     <i class="fas fa-user"></i>
                     <span>Profil</span>
-                </a>
-                <a href="?page=preferences" class="profile-nav-item">
-                    <i class="fas fa-cog"></i>
-                    <span>Preferencje</span>
-                </a>
-                <a href="?page=security" class="profile-nav-item">
-                    <i class="fas fa-shield-alt"></i>
-                    <span>Bezpieczeństwo</span>
-                </a>
-                <a href="?page=notifications" class="profile-nav-item">
-                    <i class="fas fa-bell"></i>
-                    <span>Powiadomienia</span>
-                </a>
-                <a href="?page=developers" class="profile-nav-item">
-                    <i class="fas fa-user-tie"></i>
-                    <span>Deweloper</span>
                 </a>
             </nav>
         </aside>
@@ -934,205 +922,64 @@ if ($check_table->num_rows > 0) {
                     </div>
                 </section>
                 
-                <!-- Preferences Section -->
-                <section class="settings-section">
+                                
+                                
+                <!-- Delete Account Section -->
+                <section class="settings-section" style="border-color: #e74c3c; background: #fdf2f2;">
                     <div class="settings-section-header">
-                        <div class="settings-section-icon">
-                            <i class="fas fa-cog"></i>
+                        <div class="settings-section-icon" style="background: #e74c3c;">
+                            <i class="fas fa-trash-alt"></i>
                         </div>
                         <div class="settings-section-content">
-                            <h3>Preferences</h3>
-                            <p>Customize your experience and notification settings</p>
+                            <h3 style="color: #e74c3c;">Delete Account</h3>
+                            <p>Permanently delete your account and all associated data</p>
                         </div>
                     </div>
                     
-                    <div class="form-group">
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="email_notifications" checked>
-                            <span class="slider"></span>
-                        </label>
-                        <label for="email_notifications" style="font-weight: 500;">Email Notifications</label>
-                        <small>Receive email updates about your apps and activities</small>
+                    <div style="background: #fff5f5; border: 1px solid #fed7d7; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
+                        <h4 style="color: #e53e3e; margin: 0 0 12px 0;">⚠️ Warning: This action cannot be undone!</h4>
+                        <p style="margin: 0 0 8px 0; color: #742a2a;">Deleting your account will permanently remove:</p>
+                        <ul style="margin: 0; padding-left: 20px; color: #742a2a;">
+                            <li>Your profile information and settings</li>
+                            <li>All your installed apps and preferences</li>
+                            <li>Your reviews and ratings</li>
+                            <li>Your projects and associated files</li>
+                            <li>Your notifications and activity history</li>
+                        </ul>
                     </div>
                     
                     <div class="form-group">
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="marketing_emails" checked>
-                            <span class="slider"></span>
+                        <label for="delete_confirmation" style="font-weight: 500; color: #e74c3c;">
+                            Type "DELETE" to confirm account deletion:
                         </label>
-                        <label for="marketing_emails" style="font-weight: 500;">Marketing Emails</label>
-                        <small>Receive promotional emails about new apps and features</small>
+                        <input type="text" id="delete_confirmation" name="delete_confirmation" 
+                               placeholder="Type DELETE" style="border-color: #e74c3c;">
                     </div>
                     
                     <div class="form-group">
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="auto_save" checked>
-                            <span class="slider"></span>
-                        </label>
-                        <label for="auto_save" style="font-weight: 500;">Auto-save Work</label>
-                        <small>Automatically save your work in the editor</small>
+                        <label for="delete_password" style="font-weight: 500;">Confirm your password:</label>
+                        <input type="password" id="delete_password" name="delete_password" 
+                               placeholder="Enter your password" style="border-color: #e74c3c;">
                     </div>
                     
                     <div class="form-actions">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-save"></i>
-                            Save Preferences
+                        <button type="button" id="delete_account_btn" 
+                                class="btn" style="background: #e74c3c; border-color: #e74c3c;" disabled>
+                            <i class="fas fa-trash-alt"></i>
+                            Delete My Account
                         </button>
                     </div>
                 </section>
                 
-                <!-- Security Section -->
-                <section class="settings-section">
-                    <div class="settings-section-header">
-                        <div class="settings-section-icon">
-                            <i class="fas fa-shield-alt"></i>
-                        </div>
-                        <div class="settings-section-content">
-                            <h3>Security Settings</h3>
-                            <p>Manage your account security and privacy preferences</p>
-                        </div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="two_factor_auth" checked>
-                            <span class="slider"></span>
-                        </label>
-                        <label for="two_factor_auth" style="font-weight: 500;">Two-Factor Authentication</label>
-                        <small>Add an extra layer of security to your account</small>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="session_timeout" checked>
-                            <span class="slider"></span>
-                        </label>
-                        <label for="session_timeout" style="font-weight:500;">Session Timeout</label>
-                        <small>Automatically log out after inactivity</small>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="login_notifications" class="toggle-switch">
-                            <input type="checkbox" id="login_notifications" checked>
-                            <span class="slider"></span>
-                        </label>
-                        <label for="login_notifications" style="font-weight: 500;">Login Notifications</label>
-                        <small>Show alerts when logging in from new devices</small>
-                    </div>
-                    
-                    <div class="form-actions">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-save"></i>
-                            Save Security Settings
-                        </button>
-                    </div>
-                </section>
-                
-                <!-- Notifications Section -->
-                <section class="settings-section">
-                    <div class="settings-section-header">
-                        <div class="settings-section-icon">
-                            <i class="fas fa-bell"></i>
-                        </div>
-                        <div class="settings-section-content">
-                            <h3>Notification Preferences</h3>
-                            <p>Choose how you want to be notified</p>
-                        </div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="app_updates" checked>
-                            <span class="slider"></span>
-                        </label>
-                        <label for="app_updates" style="font-weight: 500;">App Updates</label>
-                        <small>Notify when installed apps have new versions</small>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="review_responses" checked>
-                            <span class="slider"></span>
-                        </label>
-                        <label for="review_responses" style="font-weight: 500;">Review Responses</label>
-                        <small>Notify when someone responds to your reviews</small>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="weekly_digest" checked>
-                            <span class="slider"></span>
-                        </label>
-                        <label for="weekly_digest" style="font-weight: 500;">Weekly Digest</label>
-                        <small>Get weekly summary of your activity</small>
-                    </div>
-                    
-                    <div class="form-actions">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-save"></i>
-                            Save Preferences
-                        </button>
-                    </div>
-                </section>
-                
-                <!-- Developer Section -->
-                <section class="settings-section">
-                    <div class="settings-section-header">
-                        <div class="settings-section-icon">
-                            <i class="fas fa-code"></i>
-                        </div>
-                        <div class="settings-section-content">
-                            <h3>Developer Settings</h3>
-                            <p>Configure your developer tools and preferences</p>
-                        </div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="send_console_errors" checked>
-                            <span class="slider"></span>
-                        </label>
-                        <label for="send_console_errors" style="font-weight: 500;">Send Console Errors</label>
-                        <small>Send console errors to developer for debugging</small>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="auto_publish" checked>
-                            <span class="slider"></span>
-                        </label>
-                        <label for="auto_publish" style="font-weight:500;">Auto Publish</label>
-                        <small>Automatically publish new versions</small>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="debug_mode" checked>
-                            <span class="slider"></span>
-                        </label>
-                        <label for="debug_mode" style="font-weight:500;">Debug Mode</label>
-                        <small>Enable developer tools and features</small>
-                    </div>
-                    
-                    <div class="form-actions">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-save"></i>
-                            Save Developer Settings
-                        </button>
-                    </div>
-                </section>
-                
-                <div class="form-actions">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save"></i>
-                        Save All Settings
-                    </button>
+                <!-- Back to Marketplace -->
+                <div class="form-actions" style="margin-top: 32px;">
                     <a href="../marketplace/marketplace.php" class="btn btn-secondary">
                         <i class="fas fa-arrow-left"></i>
-                        Back to Marketplace
+                        Powrót do Marketplace
                     </a>
                 </div>
-            <?php endif; ?>
+                
+                            <?php endif; ?>
             
             <!-- Page Content -->
             <?php if ($page === 'installed'): ?>
@@ -1332,6 +1179,60 @@ if ($check_table->num_rows > 0) {
         function viewDeveloper(devId) {
             window.location.href = `../controllers/user/developer_profile.php?id=${devId}`;
         }
+        
+        // Delete account functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const deleteConfirmation = document.getElementById('delete_confirmation');
+            const deletePassword = document.getElementById('delete_password');
+            const deleteBtn = document.getElementById('delete_account_btn');
+            
+            // Enable/disable delete button based on input
+            function updateDeleteButton() {
+                const confirmationCorrect = deleteConfirmation.value.trim() === 'DELETE';
+                const passwordEntered = deletePassword.value.trim().length > 0;
+                deleteBtn.disabled = !(confirmationCorrect && passwordEntered);
+            }
+            
+            deleteConfirmation.addEventListener('input', updateDeleteButton);
+            deletePassword.addEventListener('input', updateDeleteButton);
+            
+            // Handle delete button click
+            deleteBtn.addEventListener('click', function() {
+                if (confirm('Are you absolutely sure you want to delete your account? This action cannot be undone!')) {
+                    if (confirm('This is your final warning. All your data will be permanently deleted. Continue?')) {
+                        // Show loading state
+                        deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
+                        deleteBtn.disabled = true;
+                        
+                        // Send delete request
+                        fetch('delete_account.php', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded',
+                            },
+                            body: 'password=' + encodeURIComponent(deletePassword.value)
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                alert('Your account has been deleted successfully. You will be redirected to the homepage.');
+                                window.location.href = '../index.php';
+                            } else {
+                                alert('Error deleting account: ' + data.message);
+                                deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i> Delete My Account';
+                                updateDeleteButton();
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            alert('An error occurred while deleting your account. Please try again.');
+                            deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i> Delete My Account';
+                            updateDeleteButton();
+                        });
+                    }
+                }
+            });
+        });
     </script>
 </body>
 </html>

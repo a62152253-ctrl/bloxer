@@ -55,7 +55,8 @@ $total_pages = max(1, ceil($total_apps / $limit));
 
 $apps_sql = "
     SELECT a.*, u.username as developer_name, u.avatar_url as developer_avatar, u.id as developer_id,
-           c.name as category_name, c.icon as category_icon
+           c.name as category_name, c.icon as category_icon,
+           a.demo_url, a.zip_url
     FROM apps a
     JOIN projects p ON a.project_id = p.id
     JOIN users u ON p.user_id = u.id
@@ -949,14 +950,18 @@ $hero_stats = [
                         </div>
 
                         <div class="market-card-actions">
-                            <button class="btn btn-primary market-install-btn" onclick="installApp(event, <?php echo $app['id']; ?>)">
-                                <i class="fas fa-download"></i>
-                                Install
-                            </button>
-                            <button class="btn btn-secondary market-use-btn" onclick="useApp(event, <?php echo $app['id']; ?>)">
-                                <i class="fas fa-play"></i>
-                                Use
-                            </button>
+                            <?php if (!empty($app['demo_url'])): ?>
+                                <a href="<?php echo htmlspecialchars($app['demo_url']); ?>" target="_blank" class="btn btn-primary">
+                                    <i class="fas fa-external-link-alt"></i>
+                                    Demo
+                                </a>
+                            <?php endif; ?>
+                            <?php if (!empty($app['zip_url'])): ?>
+                                <a href="<?php echo htmlspecialchars($app['zip_url']); ?>" target="_blank" class="btn btn-secondary">
+                                    <i class="fas fa-download"></i>
+                                    Download ZIP
+                                </a>
+                            <?php endif; ?>
                         </div>
                     </article>
                 <?php endforeach; ?>

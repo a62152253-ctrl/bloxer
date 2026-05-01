@@ -59,6 +59,7 @@ class DatabaseSetup {
         echo "\nVerifying created tables...\n";
         
         $expectedTables = [
+            'login_attempts',
             'users',
             'projects',
             'project_files',

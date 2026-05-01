@@ -79,6 +79,7 @@ foreach ($directories as $dir) {
 require_once BLOXER_ROOT . '/helpers/notification_helper.php';
 require_once BLOXER_ROOT . '/helpers/recommendation_engine.php';
 require_once BLOXER_ROOT . '/helpers/security_utils.php';
+require_once BLOXER_ROOT . '/helpers/missing_functions.php';
 
 // Initialize validation patterns
 if (class_exists('ValidationPatterns')) {
