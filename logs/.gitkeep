@@ -1,5 +1,0 @@
-# This file ensures the logs directory is tracked by git
-# The directory will store application logs:
-# - php_errors.log
-# - security.log
-# - access.log

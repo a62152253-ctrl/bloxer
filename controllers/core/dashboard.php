@@ -248,6 +248,72 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['form_errors'] = $errors;
             }
             break;
+
+        case 'invite_team_member':
+            $email = trim($_POST['email'] ?? '');
+            $role = $_POST['role'] ?? 'developer';
+            $message = trim($_POST['message'] ?? '');
+
+            if (empty($email)) {
+                SecurityUtils::sendJSONResponse(['success' => false, 'error' => 'Email is required'], 400);
+                SecurityUtils::safeExit('', 400, 'Email is required');
+            }
+
+            if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                SecurityUtils::sendJSONResponse(['success' => false, 'error' => 'Invalid email address'], 400);
+                SecurityUtils::safeExit('', 400, 'Invalid email address');
+            }
+
+            // Check if user already exists
+            $user_check = $conn->prepare("SELECT id FROM users WHERE email = ?");
+            $user_check->bind_param("s", $email);
+            $user_check->execute();
+            $existing_user = $user_check->get_result()->fetch_assoc();
+
+            if ($existing_user) {
+                SecurityUtils::sendJSONResponse(['success' => false, 'error' => 'User with this email already exists'], 400);
+                SecurityUtils::safeExit('', 400, 'User already exists');
+            }
+
+            // Create a team first (if not exists)
+            $team_check = $conn->prepare("SELECT id FROM teams WHERE owner_id = ? LIMIT 1");
+            $team_check->bind_param("i", $user['id']);
+            $team_check->execute();
+            $team = $team_check->get_result()->fetch_assoc();
+
+            if (!$team) {
+                // Create team for this user
+                $team_name = $user['username'] . "'s Team";
+                $team_slug = strtolower(preg_replace('/[^a-z0-9]+/', '-', $team_name));
+                
+                $create_team = $conn->prepare("INSERT INTO teams (name, slug, owner_id) VALUES (?, ?, ?)");
+                $create_team->bind_param("ssi", $team_name, $team_slug, $user['id']);
+                $create_team->execute();
+                $team_id = $create_team->insert_id;
+            } else {
+                $team_id = $team['id'];
+            }
+
+            // Create invitation
+            $token = bin2hex(random_bytes(32));
+            $expires_at = date('Y-m-d H:i:s', strtotime('+7 days'));
+            
+            $invite_stmt = $conn->prepare("
+                INSERT INTO team_invitations (team_id, invited_email, invited_by, role, token, message, expires_at) 
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            ");
+            $invite_stmt->bind_param("isissss", $team_id, $email, $user['id'], $role, $token, $message, $expires_at);
+            
+            if ($invite_stmt->execute()) {
+                SecurityUtils::sendJSONResponse(['success' => true, 'message' => 'Invitation sent successfully']);
+            } else {
+                SecurityUtils::sendJSONResponse(['success' => false, 'error' => 'Failed to send invitation'], 500);
+            }
+            SecurityUtils::safeExit('', 200, 'Invitation processed');
+
+        default:
+            SecurityUtils::sendJSONResponse(['success' => false, 'error' => 'Invalid action'], 400);
+            SecurityUtils::safeExit('', 400, 'Invalid action');
     }
 }
 
@@ -331,10 +397,8 @@ $pageTitles = [
     'teams' => 'Team Management',
     'offers' => 'Offers',
     'reviews' => 'Code Review',
-    'deploy' => 'Deploy Queue',
     'publish' => 'Publish Center',
     'version-control' => 'Version Control',
-    'analytics' => 'Analytics',
     'notifications' => 'Notifications',
     'settings' => 'Settings'
 ];
@@ -411,15 +475,6 @@ $published_count = count(array_filter($publishable_projects, fn($project) => ($p
                         <span class="studio-nav-desc">Quality check</span>
                     </div>
                 </div>
-                <div class="studio-nav-item nav-item <?php echo $page === 'deploy' ? 'active' : ''; ?>" onclick="window.location.href='?page=deploy'">
-                    <div class="studio-nav-icon">
-                        <i class="fas fa-rocket"></i>
-                    </div>
-                    <div class="studio-nav-content">
-                        <span class="studio-nav-title">Deploy Queue</span>
-                        <span class="studio-nav-desc">Release management</span>
-                    </div>
-                </div>
                 <div class="studio-nav-item nav-item <?php echo $page === 'publish' ? 'active' : ''; ?>" onclick="window.location.href='?page=publish'">
                     <div class="studio-nav-icon">
                         <i class="fas fa-rocket"></i>
@@ -436,15 +491,6 @@ $published_count = count(array_filter($publishable_projects, fn($project) => ($p
                     <div class="studio-nav-content">
                         <span class="studio-nav-title">Version Control</span>
                         <span class="studio-nav-desc">Track changes</span>
-                    </div>
-                </div>
-                <div class="studio-nav-item nav-item <?php echo $page === 'analytics' ? 'active' : ''; ?>" onclick="window.location.href='?page=analytics'">
-                    <div class="studio-nav-icon">
-                        <i class="fas fa-chart-line"></i>
-                    </div>
-                    <div class="studio-nav-content">
-                        <span class="studio-nav-title">Analytics</span>
-                        <span class="studio-nav-desc">View stats</span>
                     </div>
                 </div>
                 <div class="studio-nav-item nav-item <?php echo $page === 'notifications' ? 'active' : ''; ?>" onclick="window.location.href='?page=notifications'">
@@ -811,6 +857,24 @@ $published_count = count(array_filter($publishable_projects, fn($project) => ($p
                         <?php endif; ?>
                     </section>
 
+                <?php elseif ($page === 'teams'): ?>
+                    <section class="studio-section">
+                        <div class="studio-section-head">
+                            <div>
+                                <h2>Team Management</h2>
+                                <p>Collaborate with other developers and manage your team projects.</p>
+                            </div>
+                        </div>
+                        <div class="studio-empty">
+                            <i class="fas fa-users"></i>
+                            <h3>Team Collaboration</h3>
+                            <p>Invite team members, assign roles, and work together on projects.</p>
+                            <button class="btn btn-primary" onclick="showInviteModal()">
+                                <i class="fas fa-user-plus"></i> Invite Team Member
+                            </button>
+                        </div>
+                    </section>
+
                 <?php elseif ($page === 'version-control'): ?>
                     <section class="studio-section">
                         <div class="studio-section-head">
@@ -825,24 +889,6 @@ $published_count = count(array_filter($publishable_projects, fn($project) => ($p
                             <p>Manage your project versions and track changes over time.</p>
                             <a href="../api/version-control.php" class="btn btn-primary">
                                 <i class="fas fa-external-link-alt"></i> Open Version Control
-                            </a>
-                        </div>
-                    </section>
-
-                <?php elseif ($page === 'analytics'): ?>
-                    <section class="studio-section">
-                        <div class="studio-section-head">
-                            <div>
-                                <h2>Analytics</h2>
-                                <p>View detailed statistics about your apps and user engagement.</p>
-                            </div>
-                        </div>
-                        <div class="studio-empty">
-                            <i class="fas fa-chart-line"></i>
-                            <h3>Analytics Dashboard</h3>
-                            <p>Track downloads, user engagement, and revenue metrics.</p>
-                            <a href="../tools/overview.php" class="btn btn-primary">
-                                <i class="fas fa-external-link-alt"></i> Open Analytics
                             </a>
                         </div>
                     </section>
@@ -1022,6 +1068,65 @@ $published_count = count(array_filter($publishable_projects, fn($project) => ($p
         </div>
     </div>
 
+    <!-- Invite Team Member Modal -->
+    <div class="studio-modal" id="invite-modal">
+        <div class="studio-modal-card">
+            <h3>Invite Team Member</h3>
+            <form id="invite-form" method="POST" action="dashboard.php" class="studio-form-stack">
+                <input type="hidden" name="action" value="invite_team_member">
+                
+                <div class="form-group">
+                    <label for="invite-email">Email Address</label>
+                    <input type="email" id="invite-email" name="email" required placeholder="colleague@example.com">
+                </div>
+                
+                <div class="form-group">
+                    <label for="invite-role">Role</label>
+                    <select id="invite-role" name="role" required>
+                        <option value="developer">Developer</option>
+                        <option value="designer">Designer</option>
+                        <option value="tester">Tester</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="invite-message">Message (Optional)</label>
+                    <textarea id="invite-message" name="message" rows="3" placeholder="Join my team to work on exciting projects!"></textarea>
+                </div>
+                
+                <div class="studio-modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeInviteModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Send Invitation</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Shared Project Chat Modal -->
+    <div class="studio-modal" id="shared-chat-modal">
+        <div class="studio-modal-card" style="max-width: 600px;">
+            <div class="studio-modal-header">
+                <h3 id="shared-chat-modal-title">Team Chat</h3>
+                <button class="studio-modal-close" onclick="closeSharedChatModal()">&times;</button>
+            </div>
+            <div class="chat-container" style="height: 400px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-bottom: 16px; background: #f9fafb;">
+                <div id="shared-chat-messages"></div>
+            </div>
+            <form id="shared-chat-form" class="studio-form-stack">
+                <input type="hidden" id="shared-chat-project-id" name="project_id">
+                <input type="hidden" name="action" value="send_shared_chat_message">
+                <div class="form-group">
+                    <textarea id="shared-chat-message" name="message" rows="3" placeholder="Type your message..." required></textarea>
+                </div>
+                <div class="studio-modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeSharedChatModal()">Close</button>
+                    <button type="submit" class="btn btn-primary">Send Message</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
@@ -1175,22 +1280,82 @@ $published_count = count(array_filter($publishable_projects, fn($project) => ($p
             }
         }
 
+        // Invite modal functions
+        function showInviteModal() {
+            const modal = document.getElementById('invite-modal');
+            if (modal) {
+                modal.style.display = 'flex';
+                modal.classList.add('show');
+                setTimeout(() => {
+                    const emailInput = document.getElementById('invite-email');
+                    if (emailInput) emailInput.focus();
+                }, 100);
+            }
+        }
+
+        function closeInviteModal() {
+            const modal = document.getElementById('invite-modal');
+            if (modal) {
+                modal.style.display = 'none';
+                modal.classList.remove('show');
+            }
+            const form = document.getElementById('invite-form');
+            if (form) {
+                form.reset();
+            }
+        }
+
+        // Handle invite form submission
+        const inviteForm = document.getElementById('invite-form');
+        if (inviteForm) {
+            inviteForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const formData = new FormData(inviteForm);
+                
+                fetch('dashboard.php', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Invitation sent successfully!');
+                        closeInviteModal();
+                        // Refresh page to show updated teams
+                        window.location.reload();
+                    } else {
+                        alert('Error sending invitation: ' + (data.error || 'Unknown error'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error sending invitation. Please try again.');
+                });
+            });
+        }
+
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
                 closeModal();
                 closePublishModal();
+                closeInviteModal();
             }
         });
 
         window.onclick = function(event) {
             const createModal = document.getElementById('create-project-modal');
             const publishModal = document.getElementById('publish-modal');
+            const inviteModal = document.getElementById('invite-modal');
 
             if (event.target === createModal) {
                 closeModal();
             }
             if (event.target === publishModal) {
                 closePublishModal();
+            }
+            if (event.target === inviteModal) {
+                closeInviteModal();
             }
         };
 

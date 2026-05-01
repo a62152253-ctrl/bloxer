@@ -138,51 +138,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Get analytics data
-$analytics_data = [];
-if ($current_project) {
-    // Check if user_activity table exists
-    $table_check = $conn->query("SHOW TABLES LIKE 'user_activity'");
-    
-    if ($table_check->num_rows > 0) {
-        // Get activity summary
-        $stmt = $conn->prepare("
-            SELECT activity_type, COUNT(*) as count 
-            FROM user_activity 
-            WHERE project_id = ? AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
-            GROUP BY activity_type
-        ");
-        $stmt->bind_param("i", $project_id);
-        $stmt->execute();
-        $activity_summary = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
-    } else {
-        $activity_summary = [];
-    }
-    
-    // Check if visitor_tracking table exists
-    $table_check = $conn->query("SHOW TABLES LIKE 'visitor_tracking'");
-    
-    if ($table_check->num_rows > 0) {
-        // Get visitor summary
-        $stmt = $conn->prepare("
-            SELECT DATE(created_at) as date, COUNT(*) as visitors
-            FROM visitor_tracking 
-            WHERE project_id = ? AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
-            GROUP BY DATE(created_at)
-            ORDER BY date
-        ");
-        $stmt->bind_param("i", $project_id);
-        $stmt->execute();
-        $visitor_summary = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
-    } else {
-        $visitor_summary = [];
-    }
-    
-    $analytics_data = [
-        'activity_summary' => $activity_summary,
-        'visitor_summary' => $visitor_summary
-    ];
-}
 
 ?>
 
@@ -281,8 +236,7 @@ if ($current_project) {
                             'overview' => 'Tools Overview',
                             'preview' => 'Live Preview',
                             'activity' => 'Activity Tracking',
-                            'visitors' => 'Visitor Monitor',
-                            'performance' => 'Performance Analytics'
+                            'visitors' => 'Visitor Monitor'
                         ];
                         echo $pageTitles[$page] ?? 'Developer Tools';
                         ?>

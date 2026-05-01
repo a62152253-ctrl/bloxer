@@ -43,6 +43,7 @@ class DatabaseConfig {
             'username' => $_ENV['DB_USER'] ?? 'root',
             'password' => $_ENV['DB_PASS'] ?? '',
             'database' => $_ENV['DB_NAME'] ?? 'bloxer_db',
+            'port' => intval($_ENV['DB_PORT'] ?? 3306),
             'charset' => 'utf8mb4',
             'collation' => 'utf8mb4_unicode_ci'
         ];
@@ -50,7 +51,7 @@ class DatabaseConfig {
     
     private function connect() {
         try {
-            $dsn = "mysql:host={$this->config['host']};dbname={$this->config['database']};charset={$this->config['charset']}";
+            $dsn = "mysql:host={$this->config['host']};port={$this->config['port']};dbname={$this->config['database']};charset={$this->config['charset']}";
             
             $options = [
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
@@ -62,7 +63,15 @@ class DatabaseConfig {
             $this->connection = new PDO($dsn, $this->config['username'], $this->config['password'], $options);
             
         } catch (PDOException $e) {
-            if (isDevelopmentEnvironment()) {
+            $env_file = dirname(__DIR__) . '/.env';
+            $is_dev = false;
+            if (file_exists($env_file)) {
+                $env_content = file_get_contents($env_file);
+                $is_dev = strpos($env_content, 'APP_ENV=development') !== false || 
+                         strpos($env_content, 'APP_ENV=local') !== false;
+            }
+            
+            if ($is_dev) {
                 die("Database connection failed: " . $e->getMessage());
             } else {
                 error_log("Database connection failed: " . $e->getMessage());
