@@ -12,7 +12,7 @@ try {
     $conn = new mysqli($host, $user, $pass);
     
     if ($conn->connect_error) {
-        die("Connection failed: " . $conn->connect_error);
+        SecurityUtils::safeExit('Database connection failed: ' . $conn->connect_error, 500, 'Database error');
     }
     
     echo "<h2>Bloxer Database Setup</h2>";

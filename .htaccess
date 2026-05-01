@@ -7,20 +7,40 @@ RewriteEngine On
     Header always set X-Frame-Options DENY
     Header always set X-XSS-Protection "1; mode=block"
     Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self';"
+    Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+    Header always set Permissions-Policy "geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()"
 </IfModule>
 
-# Hide .htaccess file
-<Files .htaccess>
+# Hide sensitive files
+<Files ~ "^\.">
     Order allow,deny
     Deny from all
 </Files>
 
+<FilesMatch "\.(env|log|txt|md|json|xml|yml|yaml|ini|conf|config)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
 # Disable directory listing
 Options -Indexes
+
+# Limit request size
+LimitRequestBody 10485760
+
+# Restrict file access
+<FilesMatch "\.(php|phtml|php3|php4|php5|phar)$">
+    Order allow,deny
+    Allow from all
+</FilesMatch>
 
 # PHP configuration
 php_flag display_errors Off
 php_value error_log logs/php_errors.log
+php_value max_file_uploads 55
+php_value upload_max_filesize 64M
+php_value post_max_size 128M
 
 # URL rewriting for clean URLs
 RewriteCond %{REQUEST_FILENAME} !-f

@@ -284,10 +284,10 @@ if (empty($html_content)) {
                 <button class="control-btn" onclick="reloadApp()">
                     <i class="fas fa-sync"></i> Reload
                 </button>
-                <a href="app.php?id=<?php echo $app_id; ?>" class="control-btn">
+                <a href="../apps/app.php?id=<?php echo $app_id; ?>" class="control-btn">
                     <i class="fas fa-info-circle"></i> App Info
                 </a>
-                <a href="profile.php" class="control-btn">
+                <a href="../user/profile.php" class="control-btn">
                     <i class="fas fa-times"></i> Close
                 </a>
             </div>
@@ -296,7 +296,7 @@ if (empty($html_content)) {
             <iframe 
                 class="app-content" 
                 id="app-iframe"
-                src="sandbox.php?id=<?php echo $app_id; ?>"
+                src="../controllers/core/sandbox.php?id=<?php echo $app_id; ?>"
                 sandbox="<?php echo SandboxConfig::getSandboxAttributes(); ?>"
                 allow="<?php echo SandboxConfig::getAllowAttributes(); ?>"
                 loading="lazy"
@@ -309,7 +309,7 @@ if (empty($html_content)) {
         </div>
     </div>
     
-    <script src="../assets/js/sandbox-bridge.js"></script>
+    <script src="../../assets/js/sandbox-bridge.js"></script>
     <script>
         // Listen for messages from iframe
         window.addEventListener('message', function(event) {

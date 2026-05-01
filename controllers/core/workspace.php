@@ -3,8 +3,7 @@ require_once __DIR__ . '/../../bootstrap.php';
 
 $auth = new AuthCore();
 if (!$auth->isLoggedIn()) {
-    header('Location: ../auth/login.php');
-    exit;
+    SecurityUtils::safeRedirect('../auth/login.php', 403, 'Authentication required');
 }
 
 $user = $auth->getCurrentUser();

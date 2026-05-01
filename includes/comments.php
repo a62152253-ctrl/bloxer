@@ -3,15 +3,15 @@ require_once '../controllers/core/mainlogincore.php';
 
 $auth = new AuthCore();
 
-$action = $_POST['action'] ?? null;
+$action = SecurityUtils::validateInput($_POST['action'] ?? null, 'action');
 $user = $auth->getCurrentUser();
 
 // Handle comment submission
 if ($action === 'submit_comment' && $user) {
-    $project_id = intval($_POST['project_id'] ?? 0);
-    $app_id = intval($_POST['app_id'] ?? 0);
-    $comment_text = trim($_POST['comment'] ?? '');
-    $parent_id = intval($_POST['parent_id'] ?? 0);
+    $project_id = SecurityUtils::validateInput($_POST['project_id'] ?? 0, 'int');
+    $app_id = SecurityUtils::validateInput($_POST['app_id'] ?? 0, 'int');
+    $comment_text = SecurityUtils::validateInput(trim($_POST['comment'] ?? ''), 'string', 2000);
+    $parent_id = SecurityUtils::validateInput($_POST['parent_id'] ?? 0, 'int');
     
     if (empty($comment_text)) {
         echo json_encode(['success' => false, 'error' => 'Comment cannot be empty']);
@@ -70,7 +70,7 @@ if ($action === 'submit_comment' && $user) {
 
 // Handle comment deletion
 if ($action === 'delete_comment' && $user) {
-    $comment_id = intval($_POST['comment_id'] ?? 0);
+    $comment_id = SecurityUtils::validateInput($_POST['comment_id'] ?? 0, 'int');
     
     if ($comment_id === 0) {
         echo json_encode(['success' => false, 'error' => 'Invalid comment ID']);
@@ -120,9 +120,9 @@ if ($action === 'delete_comment' && $user) {
 
 // Get comments for project or app
 if ($action === 'get_comments') {
-    $project_id = intval($_POST['project_id'] ?? 0);
-    $app_id = intval($_POST['app_id'] ?? 0);
-    $page = max(1, intval($_POST['page'] ?? 1));
+    $project_id = SecurityUtils::validateInput($_POST['project_id'] ?? 0, 'int');
+    $app_id = SecurityUtils::validateInput($_POST['app_id'] ?? 0, 'int');
+    $page = max(1, SecurityUtils::validateInput($_POST['page'] ?? 1, 'int'));
     $limit = 20;
     $offset = ($page - 1) * $limit;
     

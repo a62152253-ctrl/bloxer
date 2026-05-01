@@ -556,6 +556,91 @@ class SecurityUtils {
     }
     
     /**
+     * Safe file content reading with validation
+     */
+    public static function safeFileGetContents($filename, $use_include_path = false, $context = null) {
+        // Validate filename
+        if (!self::validateInput($filename, 'string', 1000)) {
+            return false;
+        }
+        
+        // Check if file exists and is readable
+        if (!file_exists($filename) || !is_readable($filename)) {
+            return false;
+        }
+        
+        // Get file size to prevent reading huge files
+        $max_size = 10 * 1024 * 1024; // 10MB limit
+        $filesize = filesize($filename);
+        if ($filesize === false || $filesize > $max_size) {
+            return false;
+        }
+        
+        // Read file content
+        $content = file_get_contents($filename, $use_include_path, $context);
+        
+        if ($content === false) {
+            return false;
+        }
+        
+        return $content;
+    }
+    
+    /**
+     * Safe file writing with validation
+     */
+    public static function safeFilePutContents($filename, $data, $flags = 0, $context = null) {
+        // Validate filename
+        if (!self::validateInput($filename, 'string', 1000)) {
+            return false;
+        }
+        
+        // Check if directory is writable
+        $directory = dirname($filename);
+        if (!is_dir($directory) || !is_writable($directory)) {
+            return false;
+        }
+        
+        // Validate data size
+        $max_size = 10 * 1024 * 1024; // 10MB limit
+        if (is_string($data) && strlen($data) > $max_size) {
+            return false;
+        }
+        
+        // Write file
+        $result = file_put_contents($filename, $data, $flags, $context);
+        
+        return $result !== false;
+    }
+    
+    /**
+     * Safe command execution with validation
+     */
+    public static function safeExec($command, &$output = null, &$return_var = null) {
+        // Validate command
+        if (!self::validateInput($command, 'string', 1000)) {
+            return false;
+        }
+        
+        // Block dangerous commands
+        $dangerous = ['rm -rf', 'dd if=', 'mkfs', 'format', 'fdisk', 'shutdown', 'reboot'];
+        foreach ($dangerous as $cmd) {
+            if (stripos($command, $cmd) !== false) {
+                self::logSecurityEvent('Blocked dangerous command', $command, 'critical');
+                return false;
+            }
+        }
+        
+        // Execute command safely
+        $result = exec($command, $output, $return_var);
+        
+        // Log execution
+        self::logSecurityEvent('Command executed', $command, 'info');
+        
+        return $result;
+    }
+    
+    /**
      * Log request for debugging
      */
     public static function logRequest($endpoint, $data = []) {

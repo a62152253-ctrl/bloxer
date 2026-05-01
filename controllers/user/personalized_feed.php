@@ -548,7 +548,7 @@ function getCategoryIconPHP($slug) {
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
                 },
-                body: `action=track_behavior&event_type=${eventType}&data=${JSON.stringify(data)}`
+                body: `action=track_behavior&event_type=${eventType}&data=${JSON.stringify(data)}&csrf_token=<?php echo SecurityUtils::getCSRFToken(); ?>`
             });
         }
         
@@ -597,7 +597,7 @@ function getCategoryIconPHP($slug) {
                                 app_id: appId,
                                 position: position,
                                 recommendation_type: 'personalized'
-                            })}`
+                            })}&csrf_token=<?php echo SecurityUtils::getCSRFToken(); ?>`
                         });
                     }
                 });

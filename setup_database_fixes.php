@@ -27,15 +27,15 @@ try {
                 try {
                     $result = $conn->query($statement);
                     if ($result) {
-                        echo "<p style='color: green;'>✓ Successfully executed: " . substr($statement, 0, 50) . "...</p>";
+                        echo "<p style='color: green;'>✓ Successfully executed: " . htmlspecialchars(substr($statement, 0, 50)) . "...</p>";
                     }
                 } catch (Exception $e) {
-                    echo "<p style='color: orange;'>⚠ Warning: " . $e->getMessage() . "</p>";
+                    echo "<p style='color: orange;'>⚠ Warning: " . htmlspecialchars($e->getMessage()) . "</p>";
                 }
             }
         }
     } else {
-        echo "<p style='color: red;'>✗ SQL file not found: $sql_file</p>";
+        echo "<p style='color: red;'>✗ SQL file not found: " . htmlspecialchars($sql_file) . "</p>";
     }
     
     // Verify tables were created
@@ -43,14 +43,21 @@ try {
     $tables_to_check = ['categories', 'notifications', 'notification_preferences', 'app_versions', 'user_activity', 'visitor_tracking'];
     
     foreach ($tables_to_check as $table) {
-        $result = $conn->query("SHOW TABLES LIKE '$table'");
+        // Sanitize table name to prevent SQL injection
+        $sanitized_table = preg_replace('/[^a-zA-Z0-9_]/', '', $table);
+        if ($sanitized_table !== $table) {
+            echo "<p style='color: red;'>✗ Invalid table name: " . htmlspecialchars($table) . "</p>";
+            continue;
+        }
+        
+        $result = $conn->query("SHOW TABLES LIKE '$sanitized_table'");
         if ($result->num_rows > 0) {
-            echo "<p style='color: green;'>✓ Table '$table' exists</p>";
+            echo "<p style='color: green;'>✓ Table '" . htmlspecialchars($sanitized_table) . "' exists</p>";
             
             // Show table info
-            $info = $conn->query("SELECT COUNT(*) as count FROM $table");
+            $info = $conn->query("SELECT COUNT(*) as count FROM $sanitized_table");
             $count = $info->fetch_assoc()['count'];
-            echo "<p style='color: blue;'>  - Records: $count</p>";
+            echo "<p style='color: blue;'>  - Records: " . (int)$count . "</p>";
             
             // Check for download_count column in app_versions
             if ($table === 'app_versions') {
@@ -62,7 +69,7 @@ try {
                 }
             }
         } else {
-            echo "<p style='color: red;'>✗ Table '$table' does not exist</p>";
+            echo "<p style='color: red;'>✗ Table '" . htmlspecialchars($sanitized_table) . "' does not exist</p>";
         }
     }
     
@@ -71,6 +78,6 @@ try {
     echo "<p><a href='controllers/core/dashboard.php'>Go to Dashboard</a></p>";
     
 } catch (Exception $e) {
-    echo "<p style='color: red;'>Error: " . $e->getMessage() . "</p>";
+    echo "<p style='color: red;'>Error: " . htmlspecialchars($e->getMessage()) . "</p>";
 }
 ?>

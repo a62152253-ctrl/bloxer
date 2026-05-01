@@ -523,13 +523,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action'])) {
                 $pdo = new PDO($dsn, $user, $pass);
                 $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
                 
-                // Update .env file
-                $envContent = file_get_contents(BLOXER_ROOT . '/.env');
+                // Update .env file - validate file paths
+                $envPath = realpath(BLOXER_ROOT) . '/.env';
+                if (!file_exists($envPath) || !is_writable($envPath)) {
+                    echo json_encode(['success' => false, 'error' => 'Configuration file not accessible']);
+                    exit;
+                }
+                
+                $envContent = SecurityUtils::safeFileGetContents($envPath);
                 $envContent = preg_replace('/DB_HOST=.*/', "DB_HOST=$host", $envContent);
                 $envContent = preg_replace('/DB_NAME=.*/', "DB_NAME=$name", $envContent);
                 $envContent = preg_replace('/DB_USER=.*/', "DB_USER=$user", $envContent);
                 $envContent = preg_replace('/DB_PASS=.*/', "DB_PASS=$pass", $envContent);
-                file_put_contents(BLOXER_ROOT . '/.env', $envContent);
+                
+                if (SecurityUtils::safeFilePutContents($envPath, $envContent, LOCK_EX) === false) {
+                    echo json_encode(['success' => false, 'error' => 'Failed to write configuration']);
+                    exit;
+                }
                 
                 echo json_encode(['success' => true]);
             } catch (PDOException $e) {
@@ -542,30 +552,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action'])) {
                 $db = DatabaseConfig::getInstance();
                 $conn = $db->getConnection();
                 
-                // Read and execute schema
-                $schemaFile = BLOXER_ROOT . '/database/complete_database_schema.sql';
-                if (file_exists($schemaFile)) {
-                    $sql = file_get_contents($schemaFile);
-                    $statements = array_filter(array_map('trim', explode(';', $sql)));
-                    
-                    $log = "Starting database setup...\n";
-                    
-                    foreach ($statements as $statement) {
-                        if (!empty($statement)) {
-                            try {
-                                $conn->exec($statement);
-                                $log .= "✓ Executed: " . substr($statement, 0, 50) . "...\n";
-                            } catch (PDOException $e) {
-                                $log .= "✗ Error: " . $e->getMessage() . "\n";
-                            }
+                // Read and execute schema - validate file path
+                $schemaFile = realpath(BLOXER_ROOT) . '/database/complete_database_schema.sql';
+                if (!file_exists($schemaFile) || !is_readable($schemaFile)) {
+                    echo json_encode(['success' => false, 'error' => 'Schema file not accessible']);
+                    exit;
+                }
+                
+                $sql = SecurityUtils::safeFileGetContents($schemaFile);
+                if ($sql === false) {
+                    echo json_encode(['success' => false, 'error' => 'Failed to read schema file']);
+                    exit;
+                }
+                
+                $statements = array_filter(array_map('trim', explode(';', $sql)));
+                
+                $log = "Starting database setup...\n";
+                
+                foreach ($statements as $statement) {
+                    if (!empty($statement)) {
+                        try {
+                            $conn->exec($statement);
+                            $log .= "✓ Executed: " . substr($statement, 0, 50) . "...\n";
+                        } catch (PDOException $e) {
+                            $log .= "✗ Error: " . $e->getMessage() . "\n";
                         }
                     }
-                    
-                    $log .= "\nDatabase setup completed!\n";
-                    echo json_encode(['success' => true, 'log' => $log]);
-                } else {
-                    echo json_encode(['success' => false, 'error' => 'Schema file not found']);
                 }
+                
+                $log .= "\nDatabase setup completed!\n";
+                echo json_encode(['success' => true, 'log' => $log]);
             } catch (Exception $e) {
                 echo json_encode(['success' => false, 'error' => $e->getMessage()]);
             }
@@ -607,8 +623,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action'])) {
             exit;
             
         case 'complete':
-            // Create a completion flag
-            file_put_contents(BLOXER_ROOT . '/.installed', date('Y-m-d H:i:s'));
+            // Create a completion flag - validate file path
+            $installPath = realpath(BLOXER_ROOT) . '/.installed';
+            if (SecurityUtils::safeFilePutContents($installPath, date('Y-m-d H:i:s'), LOCK_EX) === false) {
+                echo json_encode(['success' => false, 'error' => 'Failed to create installation flag']);
+                exit;
+            }
             echo json_encode(['success' => true]);
             exit;
     }

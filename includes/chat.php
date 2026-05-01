@@ -3,31 +3,28 @@ require_once '../controllers/core/mainlogincore.php';
 
 $auth = new AuthCore();
 
-$action = $_POST['action'] ?? null;
+$action = SecurityUtils::validateInput($_POST['action'] ?? null, 'action');
 $user = $auth->getCurrentUser();
 
 // Handle message sending
 if ($action === 'send_message' && $user) {
-    $recipient_id = intval($_POST['recipient_id'] ?? 0);
-    $project_id = intval($_POST['project_id'] ?? 0);
-    $app_id = intval($_POST['app_id'] ?? 0);
-    $message_text = trim($_POST['message'] ?? '');
-    $message_type = $_POST['message_type'] ?? 'message'; // 'message', 'offer', 'deal_request'
-    $offer_amount = floatval($_POST['offer_amount'] ?? 0);
+    $recipient_id = SecurityUtils::validateInput($_POST['recipient_id'] ?? 0, 'int');
+    $project_id = SecurityUtils::validateInput($_POST['project_id'] ?? 0, 'int');
+    $app_id = SecurityUtils::validateInput($_POST['app_id'] ?? 0, 'int');
+    $message_text = SecurityUtils::validateInput(trim($_POST['message'] ?? ''), 'string', 2000);
+    $message_type = SecurityUtils::validateInput($_POST['message_type'] ?? 'message', 'string', 20);
+    $offer_amount = SecurityUtils::validateInput($_POST['offer_amount'] ?? 0, 'float');
     
     if (empty($message_text) || $recipient_id === 0) {
-        echo json_encode(['success' => false, 'error' => 'Message and recipient are required']);
-        exit();
+        SecurityUtils::safeExit(['success' => false, 'error' => 'Message and recipient are required'], 400, 'warning');
     }
     
     if (strlen($message_text) > 2000) {
-        echo json_encode(['success' => false, 'error' => 'Message too long (max 2000 characters)']);
-        exit();
+        SecurityUtils::safeExit(['success' => false, 'error' => 'Message too long (max 2000 characters)'], 400, 'warning');
     }
     
     if ($message_type === 'offer' && $offer_amount <= 0) {
-        echo json_encode(['success' => false, 'error' => 'Offer amount must be greater than 0']);
-        exit();
+        SecurityUtils::safeExit(['success' => false, 'error' => 'Offer amount must be greater than 0'], 400, 'warning');
     }
     
     $conn = $auth->getConnection();
@@ -39,8 +36,7 @@ if ($action === 'send_message' && $user) {
     $recipient = $stmt->get_result()->fetch_assoc();
     
     if (!$recipient) {
-        echo json_encode(['success' => false, 'error' => 'Recipient not found']);
-        exit();
+        SecurityUtils::safeExit(['success' => false, 'error' => 'Recipient not found'], 404, 'warning');
     }
     
     // Verify access to project/app if specified
@@ -51,14 +47,12 @@ if ($action === 'send_message' && $user) {
         $project = $stmt->get_result()->fetch_assoc();
         
         if (!$project) {
-            echo json_encode(['success' => false, 'error' => 'Project not found']);
-            exit();
+            SecurityUtils::safeExit(['success' => false, 'error' => 'Project not found'], 404, 'warning');
         }
         
         // Check if user has permission to discuss this project
         if ($project['user_id'] != $user['id']) {
-            echo json_encode(['success' => false, 'error' => 'Permission denied']);
-            exit();
+            SecurityUtils::safeExit(['success' => false, 'error' => 'Permission denied'], 403, 'warning');
         }
     }
     
@@ -69,8 +63,7 @@ if ($action === 'send_message' && $user) {
         $app = $stmt->get_result()->fetch_assoc();
         
         if (!$app) {
-            echo json_encode(['success' => false, 'error' => 'App not found']);
-            exit();
+            SecurityUtils::safeExit(['success' => false, 'error' => 'App not found'], 404, 'warning');
         }
         
         // Verify project ownership
@@ -80,8 +73,7 @@ if ($action === 'send_message' && $user) {
         $app_project = $stmt->get_result()->fetch_assoc();
         
         if ($app_project['user_id'] != $user['id']) {
-            echo json_encode(['success' => false, 'error' => 'Permission denied']);
-            exit();
+            SecurityUtils::safeExit(['success' => false, 'error' => 'Permission denied'], 403, 'warning');
         }
     }
     
@@ -95,18 +87,16 @@ if ($action === 'send_message' && $user) {
     if ($stmt->execute()) {
         echo json_encode(['success' => true, 'message' => 'Message sent successfully']);
     } else {
-        echo json_encode(['success' => false, 'error' => 'Failed to send message']);
+        SecurityUtils::safeExit(['success' => false, 'error' => 'Failed to send message'], 500, 'error');
     }
-    exit();
 }
 
 // Handle deal acceptance
 if ($action === 'accept_deal' && $user) {
-    $message_id = intval($_POST['message_id'] ?? 0);
+    $message_id = SecurityUtils::validateInput($_POST['message_id'] ?? 0, 'int');
     
     if ($message_id === 0) {
-        echo json_encode(['success' => false, 'error' => 'Invalid message ID']);
-        exit();
+        SecurityUtils::safeExit(['success' => false, 'error' => 'Invalid message ID'], 400, 'warning');
     }
     
     $conn = $auth->getConnection();
@@ -123,13 +113,11 @@ if ($action === 'accept_deal' && $user) {
     $message = $stmt->get_result()->fetch_assoc();
     
     if (!$message || !$message['is_recipient']) {
-        echo json_encode(['success' => false, 'error' => 'Message not found or permission denied']);
-        exit();
+        SecurityUtils::safeExit(['success' => false, 'error' => 'Message not found or permission denied'], 403, 'warning');
     }
     
     if ($message['message_type'] !== 'offer') {
-        echo json_encode(['success' => false, 'error' => 'This is not a deal offer']);
-        exit();
+        SecurityUtils::safeExit(['success' => false, 'error' => 'This is not a deal offer'], 400, 'warning');
     }
     
     // Update message status
@@ -163,24 +151,21 @@ if ($action === 'accept_deal' && $user) {
             $stmt->execute();
             
             // Redirect to chat2 with the offer
-            header("Location: ../chat2/chat.php?offer_id={$offer_id}");
-            exit();
+            SecurityUtils::safeRedirect("../chat2/chat.php?offer_id={$offer_id}", 302, 'Offer created, redirecting to chat');
         } else {
-            echo json_encode(['success' => false, 'error' => 'Failed to create offer']);
+            SecurityUtils::safeExit(['success' => false, 'error' => 'Failed to create offer'], 500, 'error');
         }
     } else {
-        echo json_encode(['success' => false, 'error' => 'Failed to accept deal']);
+        SecurityUtils::safeExit(['success' => false, 'error' => 'Failed to accept deal'], 500, 'error');
     }
-    exit();
 }
 
 // Handle deal rejection
 if ($action === 'reject_deal' && $user) {
-    $message_id = intval($_POST['message_id'] ?? 0);
+    $message_id = SecurityUtils::validateInput($_POST['message_id'] ?? 0, 'int');
     
     if ($message_id === 0) {
-        echo json_encode(['success' => false, 'error' => 'Invalid message ID']);
-        exit();
+        SecurityUtils::safeExit(['success' => false, 'error' => 'Invalid message ID'], 400, 'warning');
     }
     
     $conn = $auth->getConnection();
@@ -197,13 +182,11 @@ if ($action === 'reject_deal' && $user) {
     $message = $stmt->get_result()->fetch_assoc();
     
     if (!$message || !$message['is_recipient']) {
-        echo json_encode(['success' => false, 'error' => 'Message not found or permission denied']);
-        exit();
+        SecurityUtils::safeExit(['success' => false, 'error' => 'Message not found or permission denied'], 403, 'warning');
     }
     
     if ($message['message_type'] !== 'offer') {
-        echo json_encode(['success' => false, 'error' => 'This is not a deal offer']);
-        exit();
+        SecurityUtils::safeExit(['success' => false, 'error' => 'This is not a deal offer'], 400, 'warning');
     }
     
     // Update message status
@@ -211,28 +194,25 @@ if ($action === 'reject_deal' && $user) {
     $stmt->bind_param("i", $message_id);
     
     if ($stmt->execute()) {
-        echo json_encode(['success' => true, 'message' => 'Deal rejected successfully']);
+        SecurityUtils::safeExit(['success' => true, 'message' => 'Deal rejected successfully'], 200, 'success');
     } else {
-        echo json_encode(['success' => false, 'error' => 'Failed to reject deal']);
+        SecurityUtils::safeExit(['success' => false, 'error' => 'Failed to reject deal'], 500, 'error');
     }
-    exit();
 }
 
 // Get chat messages
 if ($action === 'get_messages') {
-    $other_user_id = intval($_POST['other_user_id'] ?? 0);
-    $page = max(1, intval($_POST['page'] ?? 1));
+    $other_user_id = SecurityUtils::validateInput($_POST['other_user_id'] ?? 0, 'int');
+    $page = max(1, SecurityUtils::validateInput($_POST['page'] ?? 1, 'int'));
     $limit = 50;
     $offset = ($page - 1) * $limit;
     
     if ($other_user_id === 0) {
-        echo json_encode(['success' => false, 'error' => 'Invalid user ID']);
-        exit();
+        SecurityUtils::safeExit(['success' => false, 'error' => 'Invalid user ID'], 400, 'warning');
     }
     
     if (!$user) {
-        echo json_encode(['success' => false, 'error' => 'Unauthorized']);
-        exit();
+        SecurityUtils::safeExit(['success' => false, 'error' => 'Unauthorized'], 401, 'warning');
     }
     
     $conn = $auth->getConnection();
@@ -282,8 +262,7 @@ if ($action === 'get_messages') {
 // Get conversations list
 if ($action === 'get_conversations') {
     if (!$user) {
-        echo json_encode(['success' => false, 'error' => 'Unauthorized']);
-        exit();
+        SecurityUtils::safeExit(['success' => false, 'error' => 'Unauthorized'], 401, 'warning');
     }
     
     $conn = $auth->getConnection();
@@ -324,8 +303,8 @@ if ($action === 'get_conversations') {
     $conversations = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
     
     echo json_encode(['success' => true, 'conversations' => $conversations]);
-    exit();
+    SecurityUtils::safeExit(['success' => true, 'conversations' => $conversations], 200, 'success');
 }
 
-echo json_encode(['success' => false, 'error' => 'Invalid action']);
+SecurityUtils::safeExit(['success' => false, 'error' => 'Invalid action'], 400, 'warning');
 ?>

@@ -69,10 +69,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $types = '';
             $values = [];
             
+            // Whitelist allowed preference keys to prevent SQL injection
+            $allowed_keys = [
+                'offer_notifications', 'message_notifications', 'review_notifications',
+                'update_notifications', 'system_notifications', 'email_notifications', 
+                'push_notifications', 'marketing_notifications', 'security_notifications'
+            ];
+            
             foreach ($preferences as $key => $value) {
-                $set_clauses[] = "$key = ?";
-                $types .= 's';
-                $values[] = ($value === 'on' ? 1 : 0);
+                if (in_array($key, $allowed_keys)) {
+                    $set_clauses[] = "$key = ?";
+                    $types .= 's';
+                    $values[] = ($value === 'on' ? 1 : 0);
+                }
             }
             $values[] = $user['id'];
             $types .= 'i';
@@ -114,8 +123,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['form_errors'] = ['Failed to update preferences'];
         }
         
-        header('Location: ../controllers/user/notifications.php');
-        exit();
+        SecurityUtils::safeRedirect("../controllers/user/notifications.php", 302, 'Preferences updated');
     }
 }
 
@@ -134,7 +142,7 @@ $per_page = 20;
 $offset = ($page - 1) * $per_page;
 
 $stmt = $conn->prepare("
-    SELECT * FROM notifications 
+    SELECT id, user_id, app_id, is_read, message, created_at, read_at FROM notifications 
     WHERE user_id = ? 
     ORDER BY is_read ASC, created_at DESC 
     LIMIT ? OFFSET ?
@@ -292,7 +300,7 @@ generateNotificationsFromExistingData($conn, $user['id']);
 
 // Re-get notifications after generation
 $stmt = $conn->prepare("
-    SELECT * FROM notifications 
+    SELECT id, user_id, app_id, is_read, message, created_at, read_at FROM notifications 
     WHERE user_id = ? 
     ORDER BY is_read ASC, created_at DESC 
     LIMIT ? OFFSET ?

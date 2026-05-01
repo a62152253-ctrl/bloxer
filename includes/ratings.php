@@ -5,21 +5,21 @@ $auth = new AuthCore();
 $user = $auth->getCurrentUser();
 
 $app_id = $_GET['app_id'] ?? null;
-$action = $_POST['action'] ?? null;
+$action = SecurityUtils::validateInput($_POST['action'] ?? null, 'action');
 
 // Handle rating submission
 if ($action === 'submit_rating' && $user && $app_id) {
-    $rating = intval($_POST['rating'] ?? 0);
-    $review = trim($_POST['review'] ?? '');
+    $rating = SecurityUtils::validateInput($_POST['rating'] ?? 0, 'int');
+    $review = SecurityUtils::validateInput(trim($_POST['review'] ?? ''), 'string', 1000);
     
     if ($rating < 1 || $rating > 5) {
         echo json_encode(['success' => false, 'error' => 'Invalid rating']);
-        exit();
+        SecurityUtils::safeExit('', 400, 'Invalid rating');
     }
     
     if (strlen($review) > 1000) {
         echo json_encode(['success' => false, 'error' => 'Review too long (max 1000 characters)']);
-        exit();
+        SecurityUtils::safeExit('', 400, 'Review too long');
     }
     
     $conn = $auth->getConnection();
@@ -47,7 +47,7 @@ if ($action === 'submit_rating' && $user && $app_id) {
     } else {
         echo json_encode(['success' => false, 'error' => 'Failed to save rating']);
     }
-    exit();
+    SecurityUtils::safeExit('', 500, 'Rating save failed');
 }
 
 // Handle rating deletion
@@ -63,7 +63,7 @@ if ($action === 'delete_rating' && $user && $app_id) {
     } else {
         echo json_encode(['success' => false, 'error' => 'Failed to delete rating']);
     }
-    exit();
+    SecurityUtils::safeExit('', 500, 'Rating delete failed');
 }
 
 // Get ratings for an app

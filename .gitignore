@@ -1,0 +1,47 @@
+# Environment variables
+.env
+.env.local
+.env.production
+
+# Logs
+logs/
+*.log
+php_errors.log
+security.log
+
+# Uploads
+uploads/
+version_files/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Dependencies
+node_modules/
+composer.lock
+
+# Cache
+cache/
+tmp/
+temp/
+
+# Backup files
+*.bak
+*.backup
+
+# Railway
+railway-*
+dist/
+build/
+
+# Database
+*.sql.backup
+*.dump

@@ -152,7 +152,14 @@ class NotificationHelper {
      * Check user notification preferences
      */
     public function shouldNotify($user_id, $type) {
-        $stmt = $this->conn->prepare("SELECT {$type}_notifications FROM notification_preferences WHERE user_id = ?");
+        // Whitelist allowed notification types to prevent SQL injection
+        $allowed_types = ['email', 'push', 'app', 'marketing', 'security', 'system'];
+        if (!in_array($type, $allowed_types)) {
+            return false; // Invalid type, deny by default
+        }
+        
+        $column_name = $type . '_notifications';
+        $stmt = $this->conn->prepare("SELECT {$column_name} FROM notification_preferences WHERE user_id = ?");
         $stmt->bind_param("i", $user_id);
         $stmt->execute();
         $result = $stmt->get_result()->fetch_row();

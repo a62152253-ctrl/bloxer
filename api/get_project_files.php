@@ -1,25 +1,30 @@
 <?php
 require_once '../controllers/core/mainlogincore.php';
+require_once '../config/security.php';
 
 header('Content-Type: application/json');
 
 $auth = new AuthCore();
 
 if (!$auth->isLoggedIn()) {
-    echo json_encode(['success' => false, 'error' => 'Authentication required - please log in']);
-    exit();
+    SecurityUtils::safeExit(['success' => false, 'error' => 'Authentication required - please log in'], 401, 'warning');
 }
 
 if (!$auth->isDeveloper()) {
-    echo json_encode(['success' => false, 'error' => 'Developer privileges required']);
-    exit();
+    SecurityUtils::safeExit(['success' => false, 'error' => 'Developer privileges required'], 403, 'warning');
 }
 
-$project_id = $_GET['project_id'] ?? null;
+// Validate and sanitize project ID
+$project_id = SecurityUtils::validateInput($_GET['project_id'] ?? null, 'int');
 
 if (!$project_id) {
-    echo json_encode(['success' => false, 'error' => 'Project ID is required']);
-    exit();
+    SecurityUtils::safeExit(['success' => false, 'error' => 'Project ID is required'], 400, 'warning');
+}
+
+// Rate limiting check
+if (!SecurityUtils::checkRateLimit('api_project_files', 30, 60)) { // 30 requests per minute
+    SecurityUtils::logSecurityEvent('Rate limit exceeded', "Project files API, Project ID: $project_id");
+    SecurityUtils::safeExit(['success' => false, 'error' => 'Rate limit exceeded'], 429, 'warning');
 }
 
 try {
@@ -32,26 +37,37 @@ try {
     $stmt->execute();
     
     if ($stmt->get_result()->num_rows === 0) {
-        echo json_encode(['success' => false, 'error' => 'Project not found or access denied']);
-        exit();
+        SecurityUtils::logSecurityEvent('Unauthorized project access', "Project ID: $project_id, User ID: {$user['id']}");
+        SecurityUtils::safeExit(['success' => false, 'error' => 'Project not found or access denied'], 403, 'warning');
     }
     
-    // Get project files
-    $stmt = $conn->prepare("SELECT * FROM project_files WHERE project_id = ? ORDER BY file_path");
+    // Get project files with security filtering
+    $stmt = $conn->prepare("SELECT file_path, file_size, created_at FROM project_files WHERE project_id = ? ORDER BY file_path");
     $stmt->bind_param("i", $project_id);
     $stmt->execute();
     $files = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
     
-    echo json_encode([
+    // Sanitize file paths for output
+    $safe_files = [];
+    foreach ($files as $file) {
+        $safe_files[] = [
+            'file_path' => htmlspecialchars($file['file_path']),
+            'file_size' => (int)$file['file_size'],
+            'created_at' => $file['created_at']
+        ];
+    }
+    
+    SecurityUtils::safeExit([
         'success' => true,
-        'files' => $files,
-        'count' => count($files)
-    ]);
+        'files' => $safe_files,
+        'count' => count($safe_files)
+    ], 200, 'success');
     
 } catch (Exception $e) {
-    echo json_encode([
+    SecurityUtils::logSecurityEvent('Database error in get_project_files', "Error: " . $e->getMessage() . ", Project ID: $project_id");
+    SecurityUtils::safeExit([
         'success' => false,
-        'error' => 'Database error: ' . $e->getMessage()
-    ]);
+        'error' => 'Database error occurred'
+    ], 500, 'error');
 }
 ?>

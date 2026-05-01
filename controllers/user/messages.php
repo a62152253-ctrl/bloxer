@@ -4,16 +4,14 @@ require_once '../core/mainlogincore.php';
 $auth = new AuthCore();
 
 if (!$auth->isLoggedIn()) {
-    header('Location: ../auth/login.php');
-    exit();
+    SecurityUtils::safeRedirect('../auth/login.php', 302, 'Unauthorized access attempt');
 }
 
 $user = $auth->getCurrentUser();
 $other_user_id = intval($_GET['user_id'] ?? 0);
 
 if ($other_user_id === 0) {
-    header('Location: ../core/dashboard.php');
-    exit();
+    SecurityUtils::safeRedirect('../core/dashboard.php', 302, 'Invalid user ID');
 }
 
 // Get other user info
@@ -24,8 +22,7 @@ $stmt->execute();
 $other_user = $stmt->get_result()->fetch_assoc();
 
 if (!$other_user) {
-    header('Location: ../core/dashboard.php');
-    exit();
+    SecurityUtils::safeRedirect('../core/dashboard.php', 302, 'User not found');
 }
 ?>
 
@@ -518,7 +515,7 @@ if (!$other_user) {
                     headers: {
                         'Content-Type': 'application/x-www-form-urlencoded',
                     },
-                    body: 'action=get_conversations'
+                    body: 'action=get_conversations&csrf_token=<?php echo SecurityUtils::getCSRFToken(); ?>'
                 });
                 
                 const result = await response.json();
@@ -590,7 +587,7 @@ if (!$other_user) {
                     headers: {
                         'Content-Type': 'application/x-www-form-urlencoded',
                     },
-                    body: `action=get_messages&other_user_id=${otherUserId}&page=${currentPage}`
+                    body: `action=get_messages&other_user_id=${otherUserId}&page=${currentPage}&csrf_token=<?php echo SecurityUtils::getCSRFToken(); ?>`
                 });
                 
                 const result = await response.json();
@@ -705,7 +702,7 @@ if (!$other_user) {
                     headers: {
                         'Content-Type': 'application/x-www-form-urlencoded',
                     },
-                    body: `action=send_message&recipient_id=${currentOtherUserId}&message_type=${currentMessageType}&message=${encodeURIComponent(messageText)}&offer_amount=${offerAmount}`
+                    body: `action=send_message&recipient_id=${currentOtherUserId}&message_type=${currentMessageType}&message=${encodeURIComponent(messageText)}&offer_amount=${offerAmount}&csrf_token=<?php echo SecurityUtils::getCSRFToken(); ?>`
                 });
                 
                 const result = await response.json();
@@ -736,7 +733,7 @@ if (!$other_user) {
                     headers: {
                         'Content-Type': 'application/x-www-form-urlencoded',
                     },
-                    body: `action=accept_deal&message_id=${messageId}`
+                    body: `action=accept_deal&message_id=${messageId}&csrf_token=<?php echo SecurityUtils::getCSRFToken(); ?>`
                 });
                 
                 const result = await response.json();
@@ -763,7 +760,7 @@ if (!$other_user) {
                     headers: {
                         'Content-Type': 'application/x-www-form-urlencoded',
                     },
-                    body: `action=reject_deal&message_id=${messageId}`
+                    body: `action=reject_deal&message_id=${messageId}&csrf_token=<?php echo SecurityUtils::getCSRFToken(); ?>`
                 });
                 
                 const result = await response.json();

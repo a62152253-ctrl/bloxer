@@ -67,7 +67,7 @@ $apps = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
 // Get developer's roadmap
 $stmt = $conn->prepare("
-    SELECT * FROM developer_roadmaps 
+    SELECT id, title, description, priority, target_date, status, created_at, updated_at FROM developer_roadmaps 
     WHERE developer_id = ? 
     ORDER BY priority DESC, target_date ASC
 ");
@@ -200,8 +200,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $_POST['action'] === 'update_profil
             $_SESSION['form_errors'] = ['Failed to update profile'];
         }
         
-        header("Location: ../controllers/user/developer_profile.php?id=$developer_id");
-        exit();
+        SecurityUtils::safeRedirect("../controllers/user/developer_profile.php?id=$developer_id", 302, 'Profile updated');
     }
 }
 
@@ -233,8 +232,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $_POST['action'] === 'add_roadmap')
             $_SESSION['success_message'] = "Roadmap item added successfully!";
         }
         
-        header("Location: developer_profile.php?id=$developer_id#roadmap");
-        exit();
+        SecurityUtils::safeRedirect("developer_profile.php?id=$developer_id#roadmap", 302, 'Roadmap item added');
     }
 }
 
@@ -267,8 +265,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $_POST['action'] === 'add_changelog
             $_SESSION['success_message'] = "Changelog post added successfully!";
         }
         
-        header("Location: developer_profile.php?id=$developer_id#changelog");
-        exit();
+        SecurityUtils::safeRedirect("developer_profile.php?id=$developer_id#changelog", 302, 'Changelog post added');
     }
 }
 

@@ -10,12 +10,12 @@ if (!$auth->isLoggedIn() || !$auth->isDeveloper()) {
 }
 
 $user = $auth->getCurrentUser();
-$action = $_POST['action'] ?? null;
+$action = SecurityUtils::validateInput($_POST['action'] ?? null, 'action');
 
 // Get file versions
 if ($action === 'get_versions') {
-    $project_id = intval($_POST['project_id'] ?? 0);
-    $file_path = $_POST['file_path'] ?? '';
+    $project_id = SecurityUtils::validateInput($_POST['project_id'] ?? null, 'int');
+    $file_path = SecurityUtils::validateInput($_POST['file_path'] ?? '', 'string', 255);
     
     if ($project_id === 0 || empty($file_path)) {
         echo json_encode(['success' => false, 'error' => 'Invalid parameters: project_id and file_path are required']);
@@ -36,7 +36,7 @@ if ($action === 'get_versions') {
     
     // Get file versions
     $stmt = $conn->prepare("
-        SELECT * FROM file_versions 
+        SELECT id, file_path, content, file_type, version_number, change_description, created_at FROM file_versions 
         WHERE project_id = ? AND file_path = ? 
         ORDER BY version_number DESC
         LIMIT 20
@@ -51,9 +51,9 @@ if ($action === 'get_versions') {
 
 // Restore file version
 if ($action === 'restore_version') {
-    $project_id = intval($_POST['project_id'] ?? 0);
-    $file_path = $_POST['file_path'] ?? '';
-    $version_id = intval($_POST['version_id'] ?? 0);
+    $project_id = SecurityUtils::validateInput($_POST['project_id'] ?? null, 'int');
+    $file_path = SecurityUtils::validateInput($_POST['file_path'] ?? '', 'string', 255);
+    $version_id = SecurityUtils::validateInput($_POST['version_id'] ?? null, 'int');
     
     if ($project_id === 0 || empty($file_path) || $version_id === 0) {
         echo json_encode(['success' => false, 'error' => 'Invalid parameters: project_id, file_path, and version_id are required']);
@@ -74,7 +74,7 @@ if ($action === 'restore_version') {
     
     // Get version to restore
     $stmt = $conn->prepare("
-        SELECT * FROM file_versions 
+        SELECT id, file_path, content, file_type, version_number, change_description FROM file_versions 
         WHERE id = ? AND project_id = ? AND file_path = ?
     ");
     $stmt->bind_param("iis", $version_id, $project_id, $file_path);
@@ -162,7 +162,7 @@ function createFileVersion($conn, $project_id, $file_path, $content, $change_des
 
 // Get project version history
 if ($action === 'get_project_history') {
-    $project_id = intval($_POST['project_id'] ?? 0);
+    $project_id = SecurityUtils::validateInput($_POST['project_id'] ?? null, 'int');
     
     if ($project_id === 0) {
         echo json_encode(['success' => false, 'error' => 'Invalid project ID']);

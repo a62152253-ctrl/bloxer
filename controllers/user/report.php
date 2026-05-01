@@ -11,10 +11,10 @@ $user = $auth->getCurrentUser();
 
 // Handle report submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $_POST['action'] === 'submit_report') {
-    $reported_type = $_POST['reported_type'] ?? '';
-    $reported_id = $_POST['reported_id'] ?? null;
-    $reason = $_POST['reason'] ?? '';
-    $description = trim($_POST['description'] ?? '');
+    $reported_type = SecurityUtils::validateInput($_POST['reported_type'] ?? '', 'string', 20);
+    $reported_id = SecurityUtils::validateInput($_POST['reported_id'] ?? null, 'int');
+    $reason = SecurityUtils::validateInput($_POST['reason'] ?? '', 'string', 50);
+    $description = SecurityUtils::validateInput(trim($_POST['description'] ?? ''), 'string', 1000);
     
     if ($reported_type && $reported_id && $reason && $description) {
         $conn = $auth->getConnection();
@@ -45,14 +45,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $_POST['action'] === 'submit_report
         }
         
         // Redirect back
-        $redirect_url = $_POST['redirect_url'] ?? '../marketplace/marketplace.php';
-        header("Location: $redirect_url");
-        exit();
+        $redirect_url = SecurityUtils::validateInput($_POST['redirect_url'] ?? '../marketplace/marketplace.php', 'url', 500);
+        SecurityUtils::safeRedirect($redirect_url, 302, 'Report submitted');
     }
 
 // Get item details for reporting
-$reported_type = $_GET['type'] ?? '';
-$reported_id = $_GET['id'] ?? null;
+$reported_type = SecurityUtils::validateInput($_GET['type'] ?? '', 'string', 20);
+$reported_id = SecurityUtils::validateInput($_GET['id'] ?? null, 'int');
 
 $item_details = null;
 if ($reported_type && $reported_id) {
@@ -86,7 +85,7 @@ if ($reported_type && $reported_id) {
             break;
             
         case 'user':
-            $stmt = $conn->prepare("SELECT * FROM users WHERE id = ?");
+            $stmt = $conn->prepare("SELECT id, username, email, avatar_url, bio, user_type, created_at FROM users WHERE id = ?");
             $stmt->bind_param("i", $reported_id);
             $stmt->execute();
             $item_details = $stmt->get_result()->fetch_assoc();
@@ -96,8 +95,7 @@ if ($reported_type && $reported_id) {
 
 if (!$item_details) {
     $_SESSION['form_errors'] = ['Invalid item for reporting'];
-    header('Location: ../marketplace/marketplace.php');
-    exit();
+    SecurityUtils::safeRedirect('../marketplace/marketplace.php', 404, 'Invalid item for reporting');
 }
 ?>
 

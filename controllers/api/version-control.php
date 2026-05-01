@@ -113,8 +113,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     }
                     
                     $_SESSION['success_message'] = "Version $version created successfully for '{$app['title']}'";
-                    header('Location: version-control.php');
-                    exit();
+                    SecurityUtils::safeRedirect('version-control.php', 302, 'Version created successfully');
                 } else {
                     $_SESSION['form_errors'] = ['Failed to create version: ' . $stmt->error];
                 }

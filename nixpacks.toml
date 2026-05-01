@@ -1,0 +1,18 @@
+[phases.setup]
+nixPkgs = ["php82", "php82Packages.composer", "nginx"]
+nixLibs = ["libmysqlclient"]
+
+[phases.install]
+cmds = [
+  "mkdir -p /var/log/nginx",
+  "mkdir -p /var/cache/nginx",
+  "composer install --ignore-platform-reqs"
+]
+
+[phases.build]
+cmds = [
+  "composer install --no-dev --optimize-autoloader"
+]
+
+[start]
+cmd = "php -S 0.0.0.0:3000 -t public"

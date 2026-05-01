@@ -7,8 +7,7 @@ $user = $auth->getCurrentUser();
 $app_id = $_GET['id'] ?? null;
 
 if (!$app_id) {
-    header('Location: marketplace.php');
-    exit();
+    SecurityUtils::safeRedirect('../marketplace/marketplace.php', 302, 'Invalid app ID');
 }
 
 // Get app details
@@ -28,8 +27,7 @@ $stmt->execute();
 $app = $stmt->get_result()->fetch_assoc();
 
 if (!$app) {
-    header('Location: marketplace.php');
-    exit();
+    SecurityUtils::safeRedirect('../marketplace/marketplace.php', 404, 'App not found');
 }
 
 // Get app reviews

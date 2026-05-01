@@ -17,8 +17,7 @@ if (session_status() === PHP_SESSION_NONE) {
 session_destroy();
 
 // Redirect to login
-header('Location: ../controllers/auth/login.php');
-exit();
+SecurityUtils::safeRedirect('../controllers/auth/login.php', 302, 'Session cleared');
 ?>
 
 <!DOCTYPE html>

@@ -118,7 +118,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->execute();
             
             // Redirect to app runner
-            SecurityUtils::safeRedirect("run_app.php?id={$app_id}", 302, 'Opening app');
+            SecurityUtils::safeRedirect("../controllers/core/run_app.php?id={$app_id}", 302, 'Opening app');
         }
     }
     
@@ -165,6 +165,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             <div class="app-actions">
                 <form method="POST" style="display: inline;">
+                    <input type="hidden" name="csrf_token" value="<?php echo SecurityUtils::getCSRFToken(); ?>">
                     <?php if ($is_installed): ?>
                         <button type="submit" name="action" value="use_app" class="btn btn-primary">
                             <i class="fas fa-play"></i>
@@ -194,7 +195,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <!-- App Preview/Run Area -->
                 <div class="app-frame-container">
                     <?php if ($is_installed): ?>
-                        <iframe src="run_app.php?id=<?php echo $app_id; ?>" class="app-frame" allowfullscreen></iframe>
+                        <iframe src="../controllers/core/run_app.php?id=<?php echo $app_id; ?>" class="app-frame" allowfullscreen></iframe>
                     <?php else: ?>
                         <div style="height: 600px; display: flex; align-items: center; justify-content: center; background: #f8f9fa; border-radius: 20px;">
                             <div style="text-align: center;">

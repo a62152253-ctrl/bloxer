@@ -27,7 +27,8 @@ $command = "php controllers/api/websocket_server.php";
 echo "Running: $command\n";
 echo "Press Ctrl+C to stop the server\n\n";
 
-// Execute the server
-system($command);
+// Execute the server securely
+$safe_command = escapeshellcmd($command);
+SecurityUtils::safeExec($safe_command);
 
 ?>

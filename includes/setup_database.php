@@ -18,7 +18,7 @@ class DatabaseSetup extends AuthCore {
                 throw new Exception("Schema file not found: " . $this->schema_file);
             }
             
-            $schema = file_get_contents($this->schema_file);
+            $schema = SecurityUtils::safeFileGetContents($this->schema_file);
             $statements = array_filter(array_map('trim', explode(';', $schema)));
             
             echo "<h3>📋 Executing SQL Statements...</h3>\n";
@@ -133,7 +133,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['setup'])) {
         }
         
         echo "<p><a href='../controllers/auth/login.php'>Go to Login</a> | <a href='index.php'>Go to Homepage</a></p>";
-        exit();
+        SecurityUtils::safeExit('', 200, 'success');
     }
 }
 ?>

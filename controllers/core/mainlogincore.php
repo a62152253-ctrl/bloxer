@@ -8,7 +8,7 @@ require_once __DIR__ . '/../../bootstrap.php';
 function isDevelopmentEnvironment() {
     $env_file = dirname(__DIR__, 2) . '/.env';
     if (file_exists($env_file)) {
-        $env_content = file_get_contents($env_file);
+        $env_content = SecurityUtils::safeFileGetContents($env_file);
         return strpos($env_content, 'APP_ENV=development') !== false || 
                strpos($env_content, 'APP_ENV=local') !== false;
     }
@@ -65,7 +65,7 @@ class AuthCore {
         }
     }
     
-    public function getConnection() {
+    public function getConnection(): mysqli {
         if (!$this->conn) {
             $this->connectMysqli();
         }
@@ -268,8 +268,7 @@ public function logout() {
             );
         }
         
-        header('Location: ../auth/login.php');
-        exit();
+        SecurityUtils::safeRedirect('../auth/login.php', 403, 'Session expired');
     }
     
     public function getCurrentUser() {
@@ -293,15 +292,13 @@ public function logout() {
     
     public function requireDeveloper() {
         if (!$this->isLoggedIn() || !$this->isDeveloper()) {
-            header('Location: ../auth/login.php');
-            exit();
+            SecurityUtils::safeRedirect('../auth/login.php', 403, 'Developer access required');
         }
     }
     
     public function requireLogin() {
         if (!$this->isLoggedIn()) {
-            header('Location: ../auth/login.php');
-            exit();
+            SecurityUtils::safeRedirect('../auth/login.php', 403, 'Login required');
         }
     }
     

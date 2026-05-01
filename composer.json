@@ -1,18 +1,30 @@
 {
-    "name": "bloxer/chat-websocket",
-    "description": "Real-time chat system for Bloxer platform",
+    "name": "bloxer/platform",
+    "description": "Complete app development platform with collaboration tools",
     "require": {
-        "php": ">=7.4",
-        "ratchet/pawl": "^0.4.0",
-        "ratchet/rfc6455": "^0.2.0"
+        "php": ">=8.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^9.0"
     },
     "autoload": {
         "psr-4": {
-            "Bloxer\\": "src/"
-        }
+            "Bloxer\\Controllers\\": "controllers/",
+            "Bloxer\\Helpers\\": "helpers/",
+            "Bloxer\\Config\\": "config/"
+        },
+        "files": [
+            "bootstrap.php"
+        ]
     },
-    "scripts": {
-        "start": "php websocket_server.php",
-        "install-deps": "composer install"
-    }
+        "scripts": {
+        "deploy": "composer install --no-dev --optimize-autoloader",
+        "optimize": "composer dump-autoload --optimize"
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "sort-packages": true
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
 }

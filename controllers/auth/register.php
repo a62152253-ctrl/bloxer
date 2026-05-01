@@ -5,9 +5,9 @@ $auth = new AuthCore();
 
 if ($auth->isLoggedIn()) {
     if ($auth->isDeveloper()) {
-        header('Location: ../core/dashboard.php');
+        SecurityUtils::safeRedirect('../core/dashboard.php', 302, 'Already logged in as developer');
     } else {
-        header('Location: ../marketplace/marketplace.php');
+        SecurityUtils::safeRedirect('../marketplace/marketplace.php', 302, 'Already logged in');
     }
     exit();
 }
@@ -16,7 +16,6 @@ $errors = [];
 $success = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['check_username'])) {
-    header('Content-Type: application/json');
     $username = SecurityUtils::validateInput(trim($_POST['check_username']), 'string', ['max_length' => 50]);
 
     $stmt = $auth->getConnection()->prepare("SELECT id FROM users WHERE username = ?");
@@ -24,12 +23,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['check_username'])) {
     $stmt->execute();
     $result = $stmt->get_result();
 
-    echo json_encode(['available' => $result->num_rows === 0]);
+    SecurityUtils::sendJSONResponse(['available' => $result->num_rows === 0]);
     exit();
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['check_email'])) {
-    header('Content-Type: application/json');
     $email = SecurityUtils::validateInput(trim($_POST['check_email']), 'email');
 
     $stmt = $auth->getConnection()->prepare("SELECT id FROM users WHERE email = ?");
@@ -37,7 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['check_email'])) {
     $stmt->execute();
     $result = $stmt->get_result();
 
-    echo json_encode(['available' => $result->num_rows === 0]);
+    SecurityUtils::sendJSONResponse(['available' => $result->num_rows === 0]);
     exit();
 }
 

@@ -90,10 +90,10 @@ class DebugInfo {
         $html .= '<h2>🐘 PHP Configuration</h2>';
         $html .= '<table>';
         
+        // Only show safe, non-sensitive configuration
         $importantSettings = [
             'display_errors' => 'Should be Off in production',
             'log_errors' => 'Should be On',
-            'error_log' => 'Error log location',
             'post_max_size' => 'POST data limit',
             'max_input_vars' => 'Input variables limit',
             'opcache.enable' => 'OPcache status'

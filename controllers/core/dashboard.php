@@ -4,13 +4,11 @@ require_once __DIR__ . '/../../bootstrap.php';
 $auth = new AuthCore();
 
 if (!$auth->isLoggedIn()) {
-    header('Location: login.php');
-    exit();
+    SecurityUtils::safeRedirect('login.php', 403, 'Authentication required');
 }
 
 if (!$auth->isDeveloper()) {
-    header('Location: marketplace.php');
-    exit();
+    SecurityUtils::safeRedirect('marketplace.php', 403, 'Developer access required');
 }
 
 $user = $auth->getCurrentUser();
@@ -23,9 +21,8 @@ $errors = [];
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['action'] ?? '') === 'get_chat_messages') {
     $offer_id = SecurityUtils::validateInput($_GET['offer_id'] ?? null, 'int');
     if (!$offer_id) {
-        header('Content-Type: application/json');
-        echo json_encode(['success' => false, 'error' => 'Invalid offer ID']);
-        exit;
+        SecurityUtils::sendJSONResponse(['success' => false, 'error' => 'Invalid offer ID'], 400);
+        SecurityUtils::safeExit('', 400, 'Invalid offer ID');
     }
 
     // Verify this offer belongs to the current developer
@@ -39,9 +36,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['action'] ?? '') === 'get_cha
     $stmt->bind_param("ii", $offer_id, $user['id']);
     $stmt->execute();
     if (!$stmt->get_result()->fetch_assoc()) {
-        header('Content-Type: application/json');
-        echo json_encode(['success' => false, 'error' => 'Unauthorized']);
-        exit;
+        SecurityUtils::sendJSONResponse(['success' => false, 'error' => 'Unauthorized'], 403);
+        SecurityUtils::safeExit('', 403, 'Unauthorized');
     }
 
     // Get messages
@@ -57,9 +53,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['action'] ?? '') === 'get_cha
     $stmt->execute();
     $messages = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
-    header('Content-Type: application/json');
-    echo json_encode(['success' => true, 'messages' => $messages]);
-    exit;
+    SecurityUtils::sendJSONResponse(['success' => true, 'messages' => $messages]);
+    SecurityUtils::safeExit('', 200, 'Chat messages retrieved');
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -69,9 +64,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $message = trim($_POST['message'] ?? '');
             
             if (!$offer_id || empty($message)) {
-                header('Content-Type: application/json');
-                echo json_encode(['success' => false, 'error' => 'Missing required fields']);
-                exit;
+                SecurityUtils::sendJSONResponse(['success' => false, 'error' => 'Missing required fields'], 400);
+                SecurityUtils::safeExit('', 400, 'Missing required fields');
             }
 
             // Verify this offer belongs to the current developer
@@ -87,9 +81,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $offer = $stmt->get_result()->fetch_assoc();
             
             if (!$offer) {
-                header('Content-Type: application/json');
-                echo json_encode(['success' => false, 'error' => 'Unauthorized']);
-                exit;
+                SecurityUtils::sendJSONResponse(['success' => false, 'error' => 'Unauthorized'], 403);
+                SecurityUtils::safeExit('', 403, 'Unauthorized');
             }
 
             // Insert message
@@ -100,13 +93,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->bind_param("iis", $offer_id, $user['id'], $message);
             
             if ($stmt->execute()) {
-                header('Content-Type: application/json');
-                echo json_encode(['success' => true]);
+                SecurityUtils::sendJSONResponse(['success' => true]);
             } else {
-                header('Content-Type: application/json');
-                echo json_encode(['success' => false, 'error' => 'Failed to send message']);
+                SecurityUtils::sendJSONResponse(['success' => false, 'error' => 'Failed to send message'], 500);
             }
-            exit;
+            SecurityUtils::safeExit('', 200, 'Message sent');
 
         case 'create_project':
             $name = trim($_POST['project_name'] ?? '');
@@ -182,6 +173,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if ($slug === '') {
                     $slug = 'project-' . time();
                 }
+                
+                // Check for duplicate slug and make unique
+                $original_slug = $slug;
+                $counter = 1;
+                while (true) {
+                    $check_stmt = $conn->prepare("SELECT id FROM projects WHERE slug = ? AND user_id = ? LIMIT 1");
+                    $check_stmt->bind_param("si", $slug, $user['id']);
+                    $check_stmt->execute();
+                    $check_result = $check_stmt->get_result();
+                    if ($check_result->num_rows === 0) {
+                        break; // Slug is unique
+                    }
+                    $slug = $original_slug . '-' . $counter;
+                    $counter++;
+                }
 
                 $stmt = $conn->prepare("
                     INSERT INTO projects (user_id, name, description, slug, framework)
@@ -199,7 +205,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                         if (!empty($uploaded_files)) {
                             // Limit number of files to prevent upload issues
-                            $uploaded_files = array_slice($uploaded_files, 0, 50);
+                            $uploaded_files = array_slice($uploaded_files, 0, 55);
                             
                             foreach ($uploaded_files as $file) {
                                 $file_stmt = $conn->prepare("
@@ -233,8 +239,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         }
 
                         $_SESSION['success_message'] = 'Project created successfully';
-                        header('Location: dashboard.php?page=projects');
-                        exit();
+                        SecurityUtils::safeRedirect('dashboard.php?page=projects', 302, 'Project created successfully');
                     }
                 }
             }
@@ -323,8 +328,15 @@ $publishable_projects = $publish_stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 $pageTitles = [
     'workspace' => 'Workspace',
     'projects' => 'Projects',
+    'teams' => 'Team Management',
     'offers' => 'Offers',
-    'publish' => 'Publish Center'
+    'reviews' => 'Code Review',
+    'deploy' => 'Deploy Queue',
+    'publish' => 'Publish Center',
+    'version-control' => 'Version Control',
+    'analytics' => 'Analytics',
+    'notifications' => 'Notifications',
+    'settings' => 'Settings'
 ];
 
 $total_files = array_sum(array_map(fn($project) => (int) ($project['file_count'] ?? 0), $projects));
@@ -354,7 +366,7 @@ $published_count = count(array_filter($publishable_projects, fn($project) => ($p
             </div>
 
             <nav class="studio-nav">
-                <div class="studio-nav-item nav-item <?php echo $page === 'workspace' ? 'active' : ''; ?>" onclick="window.location.href='./workspace.php'">
+                <div class="studio-nav-item nav-item <?php echo $page === 'workspace' ? 'active' : ''; ?>" onclick="window.location.href='?page=workspace'">
                     <div class="studio-nav-icon">
                         <i class="fas fa-code"></i>
                     </div>
@@ -363,7 +375,7 @@ $published_count = count(array_filter($publishable_projects, fn($project) => ($p
                         <span class="studio-nav-desc">Code & develop</span>
                     </div>
                 </div>
-                <div class="studio-nav-item nav-item <?php echo $page === 'projects' ? 'active' : ''; ?>" onclick="window.location.href='../projects/projects.php'">
+                <div class="studio-nav-item nav-item <?php echo $page === 'projects' ? 'active' : ''; ?>" onclick="window.location.href='?page=projects'">
                     <div class="studio-nav-icon">
                         <i class="fas fa-folder-open"></i>
                     </div>
@@ -372,7 +384,16 @@ $published_count = count(array_filter($publishable_projects, fn($project) => ($p
                         <span class="studio-nav-desc">Manage apps</span>
                     </div>
                 </div>
-                <div class="studio-nav-item nav-item <?php echo $page === 'offers' ? 'active' : ''; ?>" onclick="window.location.href='../user/profile.php'">
+                <div class="studio-nav-item nav-item <?php echo $page === 'teams' ? 'active' : ''; ?>" onclick="window.location.href='?page=teams'">
+                    <div class="studio-nav-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="studio-nav-content">
+                        <span class="studio-nav-title">Teams</span>
+                        <span class="studio-nav-desc">Collaborate</span>
+                    </div>
+                </div>
+                <div class="studio-nav-item nav-item <?php echo $page === 'offers' ? 'active' : ''; ?>" onclick="window.location.href='?page=offers'">
                     <div class="studio-nav-icon">
                         <i class="fas fa-handshake"></i>
                     </div>
@@ -381,7 +402,25 @@ $published_count = count(array_filter($publishable_projects, fn($project) => ($p
                         <span class="studio-nav-desc">Deals & sales</span>
                     </div>
                 </div>
-                <div class="studio-nav-item nav-item <?php echo $page === 'publish' ? 'active' : ''; ?>" onclick="window.location.href='../marketplace/publish.php'">
+                <div class="studio-nav-item nav-item <?php echo $page === 'reviews' ? 'active' : ''; ?>" onclick="window.location.href='?page=reviews'">
+                    <div class="studio-nav-icon">
+                        <i class="fas fa-code-branch"></i>
+                    </div>
+                    <div class="studio-nav-content">
+                        <span class="studio-nav-title">Code Review</span>
+                        <span class="studio-nav-desc">Quality check</span>
+                    </div>
+                </div>
+                <div class="studio-nav-item nav-item <?php echo $page === 'deploy' ? 'active' : ''; ?>" onclick="window.location.href='?page=deploy'">
+                    <div class="studio-nav-icon">
+                        <i class="fas fa-rocket"></i>
+                    </div>
+                    <div class="studio-nav-content">
+                        <span class="studio-nav-title">Deploy Queue</span>
+                        <span class="studio-nav-desc">Release management</span>
+                    </div>
+                </div>
+                <div class="studio-nav-item nav-item <?php echo $page === 'publish' ? 'active' : ''; ?>" onclick="window.location.href='?page=publish'">
                     <div class="studio-nav-icon">
                         <i class="fas fa-rocket"></i>
                     </div>
@@ -390,7 +429,7 @@ $published_count = count(array_filter($publishable_projects, fn($project) => ($p
                         <span class="studio-nav-desc">Release apps</span>
                     </div>
                 </div>
-                <div class="studio-nav-item nav-item" onclick="window.location.href='../api/version-control.php'">
+                <div class="studio-nav-item nav-item <?php echo $page === 'version-control' ? 'active' : ''; ?>" onclick="window.location.href='?page=version-control'">
                     <div class="studio-nav-icon">
                         <i class="fas fa-code-branch"></i>
                     </div>
@@ -399,7 +438,7 @@ $published_count = count(array_filter($publishable_projects, fn($project) => ($p
                         <span class="studio-nav-desc">Track changes</span>
                     </div>
                 </div>
-                <div class="studio-nav-item nav-item" onclick="window.location.href='../tools/overview.php'">
+                <div class="studio-nav-item nav-item <?php echo $page === 'analytics' ? 'active' : ''; ?>" onclick="window.location.href='?page=analytics'">
                     <div class="studio-nav-icon">
                         <i class="fas fa-chart-line"></i>
                     </div>
@@ -408,7 +447,7 @@ $published_count = count(array_filter($publishable_projects, fn($project) => ($p
                         <span class="studio-nav-desc">View stats</span>
                     </div>
                 </div>
-                <div class="studio-nav-item nav-item" onclick="window.location.href='../user/notifications.php'">
+                <div class="studio-nav-item nav-item <?php echo $page === 'notifications' ? 'active' : ''; ?>" onclick="window.location.href='?page=notifications'">
                     <div class="studio-nav-icon">
                         <i class="fas fa-bell"></i>
                     </div>
@@ -417,7 +456,7 @@ $published_count = count(array_filter($publishable_projects, fn($project) => ($p
                         <span class="studio-nav-desc">Stay updated</span>
                     </div>
                 </div>
-                <div class="studio-nav-item nav-item" onclick="window.location.href='../user/profile.php'">
+                <div class="studio-nav-item nav-item <?php echo $page === 'settings' ? 'active' : ''; ?>" onclick="window.location.href='?page=settings'">
                     <div class="studio-nav-icon">
                         <i class="fas fa-cog"></i>
                     </div>
@@ -772,6 +811,78 @@ $published_count = count(array_filter($publishable_projects, fn($project) => ($p
                         <?php endif; ?>
                     </section>
 
+                <?php elseif ($page === 'version-control'): ?>
+                    <section class="studio-section">
+                        <div class="studio-section-head">
+                            <div>
+                                <h2>Version Control</h2>
+                                <p>Track changes, manage versions, and maintain your project history.</p>
+                            </div>
+                        </div>
+                        <div class="studio-empty">
+                            <i class="fas fa-code-branch"></i>
+                            <h3>Version Control System</h3>
+                            <p>Manage your project versions and track changes over time.</p>
+                            <a href="../api/version-control.php" class="btn btn-primary">
+                                <i class="fas fa-external-link-alt"></i> Open Version Control
+                            </a>
+                        </div>
+                    </section>
+
+                <?php elseif ($page === 'analytics'): ?>
+                    <section class="studio-section">
+                        <div class="studio-section-head">
+                            <div>
+                                <h2>Analytics</h2>
+                                <p>View detailed statistics about your apps and user engagement.</p>
+                            </div>
+                        </div>
+                        <div class="studio-empty">
+                            <i class="fas fa-chart-line"></i>
+                            <h3>Analytics Dashboard</h3>
+                            <p>Track downloads, user engagement, and revenue metrics.</p>
+                            <a href="../tools/overview.php" class="btn btn-primary">
+                                <i class="fas fa-external-link-alt"></i> Open Analytics
+                            </a>
+                        </div>
+                    </section>
+
+                <?php elseif ($page === 'notifications'): ?>
+                    <section class="studio-section">
+                        <div class="studio-section-head">
+                            <div>
+                                <h2>Notifications</h2>
+                                <p>Stay updated with your latest notifications and messages.</p>
+                            </div>
+                        </div>
+                        <div class="studio-empty">
+                            <i class="fas fa-bell"></i>
+                            <h3>Notification Center</h3>
+                            <p>Manage your notifications and stay connected with your users.</p>
+                            <a href="../user/notifications.php" class="btn btn-primary">
+                                <i class="fas fa-external-link-alt"></i> Open Notifications
+                            </a>
+                        </div>
+                    </section>
+
+                <?php elseif ($page === 'settings'): ?>
+                    <section class="studio-section">
+                        <div class="studio-section-head">
+                            <div>
+                                <h2>Settings</h2>
+                                <p>Manage your account settings and preferences.</p>
+                            </div>
+                        </div>
+                        <div class="studio-empty">
+                            <i class="fas fa-cog"></i>
+                            <h3>Account Settings</h3>
+                            <p>Update your profile, security settings, and preferences.</p>
+                            <a href="../user/profile.php" class="btn btn-primary">
+                                <i class="fas fa-external-link-alt"></i> Open Settings
+                            </a>
+                        </div>
+                    </section>
+
                 <?php else: ?>
                     <section class="studio-welcome-card">
                         <div class="studio-section-head">
@@ -816,7 +927,7 @@ $published_count = count(array_filter($publishable_projects, fn($project) => ($p
                     <div class="form-group">
                         <label for="project_files">Upload files</label>
                         <input type="file" id="project_files" name="project_files[]" multiple>
-                        <div class="studio-field-note">Możesz wrzucić zestaw plików projektu i zbudować workspace od razu.</div>
+                        <div class="studio-field-note">Możesz wrzucić zestaw plików projektu (max 55 plików) i zbudować workspace od razu.</div>
                     </div>
                 </div>
 
@@ -824,7 +935,7 @@ $published_count = count(array_filter($publishable_projects, fn($project) => ($p
                     <div class="form-group">
                         <label for="project_folder">Upload project folder</label>
                         <input type="file" id="project_folder" name="project_folder[]" webkitdirectory directory multiple>
-                        <div class="studio-field-note">Wrzuć cały katalog projektu wraz z podfolderami.</div>
+                        <div class="studio-field-note">Wrzuć cały katalog projektu wraz z podfolderami (max 55 plików).</div>
                     </div>
                 </div>
 
@@ -975,8 +1086,8 @@ $published_count = count(array_filter($publishable_projects, fn($project) => ($p
                     return false;
                 }
 
-                if (folderInput.files.length > 100) {
-                    alert('Too many files. Maximum 100 files allowed per folder.');
+                if (folderInput.files.length > 55) {
+                    alert('Too many files. Maximum 55 files allowed per folder.');
                     return false;
                 }
             }

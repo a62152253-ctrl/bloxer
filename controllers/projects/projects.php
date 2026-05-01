@@ -51,8 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $stmt->execute();
                 }
                 
-                header("Location: projects.php?page=workspace&project_id=$new_project_id");
-                exit();
+                SecurityUtils::safeRedirect("projects.php?page=workspace&project_id=$new_project_id", 302, 'Project created successfully');
             } else {
                 $errors[] = 'Failed to create project';
             }
@@ -77,8 +76,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->bind_param("i", $project_id);
             $stmt->execute();
             
-            header("Location: projects.php?page=projects");
-            exit();
+            SecurityUtils::safeRedirect('projects.php?page=projects', 302, 'Project deleted');
         }
     }
 }
@@ -112,8 +110,7 @@ if ($page === 'workspace' && $project_id) {
     $current_project = $stmt->get_result()->fetch_assoc();
     
     if (!$current_project) {
-        header('Location: projects.php?page=projects');
-        exit();
+        SecurityUtils::safeRedirect('projects.php?page=projects', 404, 'Project not found');
     }
 }
 

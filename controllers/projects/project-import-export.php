@@ -90,7 +90,7 @@ if ($action === 'import_project') {
         exit();
     }
     
-    $content = file_get_contents($file['tmp_name']);
+    $content = SecurityUtils::safeFileGetContents($file['tmp_name']);
     $import_data = json_decode($content, true);
     
     if (!$import_data || !isset($import_data['project']) || !isset($import_data['files'])) {

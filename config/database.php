@@ -127,17 +127,54 @@ class DatabaseConfig {
     }
     
     public function insert($table, $data) {
-        $columns = implode(', ', array_keys($data));
+        // Whitelist table names to prevent SQL injection
+        $allowed_tables = [
+            'users', 'projects', 'project_files', 'apps', 'app_reviews', 'app_ratings',
+            'user_apps', 'saved_apps', 'offers', 'offer_messages', 'notifications',
+            'notification_preferences', 'developer_wallet', 'categories', 'popular_apps',
+            'user_preferences', 'version_files', 'project_versions'
+        ];
+        
+        if (!in_array($table, $allowed_tables)) {
+            throw new Exception("Table not allowed: $table");
+        }
+        
+        // Validate column names to prevent SQL injection
+        $columns = [];
+        foreach (array_keys($data) as $column) {
+            if (!preg_match('/^[a-zA-Z_][a-zA-Z0-9_]*$/', $column)) {
+                throw new Exception("Invalid column name: $column");
+            }
+            $columns[] = $column;
+        }
+        
+        $column_list = implode(', ', $columns);
         $placeholders = implode(', ', array_fill(0, count($data), '?'));
-        $sql = "INSERT INTO $table ($columns) VALUES ($placeholders)";
+        $sql = "INSERT INTO $table ($column_list) VALUES ($placeholders)";
         
         $this->execute($sql, array_values($data));
         return $this->lastInsertId();
     }
     
     public function update($table, $data, $where, $whereParams = []) {
+        // Whitelist table names to prevent SQL injection
+        $allowed_tables = [
+            'users', 'projects', 'project_files', 'apps', 'app_reviews', 'app_ratings',
+            'user_apps', 'saved_apps', 'offers', 'offer_messages', 'notifications',
+            'notification_preferences', 'developer_wallet', 'categories', 'popular_apps',
+            'user_preferences', 'version_files', 'project_versions'
+        ];
+        
+        if (!in_array($table, $allowed_tables)) {
+            throw new Exception("Table not allowed: $table");
+        }
+        
         $setParts = [];
         foreach (array_keys($data) as $column) {
+            // Validate column names to prevent SQL injection
+            if (!preg_match('/^[a-zA-Z_][a-zA-Z0-9_]*$/', $column)) {
+                throw new Exception("Invalid column name: $column");
+            }
             $setParts[] = "$column = ?";
         }
         $setClause = implode(', ', $setParts);
@@ -150,6 +187,18 @@ class DatabaseConfig {
     }
     
     public function delete($table, $where, $params = []) {
+        // Whitelist table names to prevent SQL injection
+        $allowed_tables = [
+            'users', 'projects', 'project_files', 'apps', 'app_reviews', 'app_ratings',
+            'user_apps', 'saved_apps', 'offers', 'offer_messages', 'notifications',
+            'notification_preferences', 'developer_wallet', 'categories', 'popular_apps',
+            'user_preferences', 'version_files', 'project_versions'
+        ];
+        
+        if (!in_array($table, $allowed_tables)) {
+            throw new Exception("Table not allowed: $table");
+        }
+        
         $sql = "DELETE FROM $table WHERE $where";
         return $this->execute($sql, $params);
     }

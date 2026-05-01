@@ -5,9 +5,7 @@ require_once '../core/mainlogincore.php';
 $auth = new AuthCore();
 
 if (!$auth->isLoggedIn() || !$auth->isDeveloper()) {
-    header('Content-Type: application/json');
-    echo json_encode(['success' => false, 'error' => 'Unauthorized']);
-    exit();
+    SecurityUtils::safeExit(['success' => false, 'error' => 'Unauthorized - developer access required'], 403, 'warning');
 }
 
 // Get available templates

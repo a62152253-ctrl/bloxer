@@ -225,7 +225,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $_POST['action'] === 'import_files'
         foreach ($_FILES['project_files']['tmp_name'] as $key => $tmp_name) {
             if ($_FILES['project_files']['error'][$key] === UPLOAD_ERR_OK) {
                 $file_name = $_FILES['project_files']['name'][$key];
-                $file_content = file_get_contents($tmp_name);
+                $file_content = SecurityUtils::safeFileGetContents($tmp_name);
                 
                 $file_type = pathinfo($file_name, PATHINFO_EXTENSION);
                 $file_type_map = [
@@ -349,7 +349,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $_POST['action'] === 'import_url') 
         ]
     ]);
     
-    $content = @file_get_contents($import_url, false, $context);
+    $content = SecurityUtils::safeFileGetContents($import_url, false, $context);
     
     if ($content === false) {
         echo json_encode(['success' => false, 'error' => 'Failed to fetch content from URL']);

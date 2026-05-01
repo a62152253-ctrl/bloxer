@@ -5,9 +5,9 @@ $auth = new AuthCore();
 
 if ($auth->isLoggedIn()) {
     if ($auth->isDeveloper()) {
-        header('Location: ../core/dashboard.php');
+        SecurityUtils::safeRedirect('../core/dashboard.php', 302, 'Already logged in as developer');
     } else {
-        header('Location: ../marketplace/marketplace.php');
+        SecurityUtils::safeRedirect('../marketplace/marketplace.php', 302, 'Already logged in');
     }
     exit();
 }

@@ -6,8 +6,7 @@ $auth = new AuthCore();
 $app_id = intval($_GET['id'] ?? 0);
 
 if ($app_id === 0) {
-    header('Location: ../marketplace/marketplace.php');
-    exit();
+    SecurityUtils::safeRedirect('../marketplace/marketplace.php', 302, 'Invalid app ID');
 }
 
 // Get app details
@@ -25,8 +24,7 @@ $stmt->execute();
 $app = $stmt->get_result()->fetch_assoc();
 
 if (!$app) {
-    header('Location: ../marketplace/marketplace.php');
-    exit();
+    SecurityUtils::safeRedirect('../marketplace/marketplace.php', 404, 'App not found');
 }
 
 // Get screenshots
@@ -948,7 +946,7 @@ if ($auth->isLoggedIn()) {
     <div class="app-details-container">
         <!-- Back Button -->
         <div class="back-button">
-            <a href="marketplace.php">
+            <a href="../marketplace/marketplace.php">
                 <i class="fas fa-arrow-left"></i>
                 Back to Marketplace
             </a>
@@ -1025,7 +1023,7 @@ if ($auth->isLoggedIn()) {
                             </button>
                         <?php endif; ?>
                     <?php else: ?>
-                        <a href="login.php" class="btn-install">
+                        <a href="../auth/login.php" class="btn-install">
                             <i class="fas fa-sign-in-alt"></i>
                             Login to Install
                         </a>

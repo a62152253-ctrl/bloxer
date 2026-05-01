@@ -4,13 +4,11 @@ require_once '../core/mainlogincore.php';
 $auth = new AuthCore();
 
 if (!$auth->isLoggedIn()) {
-    header('Location: ../controllers/auth/login.php');
-    exit();
+    SecurityUtils::safeRedirect('../controllers/auth/login.php', 302, 'User not logged in');
 }
 
 if (!$auth->isDeveloper()) {
-    header('Location: index.php');
-    exit();
+    SecurityUtils::safeRedirect('../marketplace/marketplace.php', 302, 'Developer access required');
 }
 
 $user = $auth->getCurrentUser();
@@ -57,8 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $_POST['action'] === 'create_projec
                 $stmt->execute();
             }
             
-            header('Location: ../core/dashboard.php?page=workspace&project_id=' . $new_project_id);
-            exit();
+            SecurityUtils::safeRedirect('../core/dashboard.php?page=workspace&project_id=' . $new_project_id, 302, 'Project created successfully');
         }
     }
 }
@@ -73,8 +70,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $_POST['action'] === 'delete_projec
         $stmt->bind_param("ii", $project_id, $user['id']);
         $stmt->execute();
         
-        header('Location: projects.php');
-        exit();
+        SecurityUtils::safeRedirect('projects.php', 302, 'Project deleted');
     }
 }
 

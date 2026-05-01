@@ -1,0 +1,136 @@
+/* MODAL FIX - Critical CSS for modal visibility */
+
+/* Force show modals when they have inline display: flex */
+.modal, .studio-modal {
+    display: none !important;
+    position: fixed;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    z-index: 10000 !important;
+    background: rgba(0, 0, 0, 0.5) !important;
+    backdrop-filter: blur(4px);
+}
+
+/* Override inline styles to show modals */
+div[id$="-modal"][style*="display: flex"],
+div[id$="-modal"][style*="flex"],
+.studio-modal[style*="display: flex"],
+.studio-modal[style*="flex"] {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+/* Modal card/content styling */
+.modal-content, .studio-modal-card {
+    background: #FFFFFF;
+    border: 1px solid #E5E5EA;
+    border-radius: 18px;
+    padding: 32px;
+    max-width: 600px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    position: relative;
+    z-index: 10001;
+}
+
+/* Modal header */
+.studio-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.studio-modal-close {
+    background: none;
+    border: none;
+    font-size: 28px;
+    color: #6E6E73;
+    cursor: pointer;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.studio-modal-close:hover {
+    color: #1C1C1E;
+}
+
+/* Modal actions */
+.studio-modal-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    margin-top: 32px;
+}
+
+/* Form styling inside modals */
+.studio-form-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.studio-two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+/* Chat modal specific */
+#chat-modal .chat-container {
+    height: 400px;
+    overflow-y: auto;
+    border: 1px solid #E5E5EA;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 16px;
+    background: #F9FAFB;
+}
+
+.chat-message {
+    margin-bottom: 12px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Field notes */
+.studio-field-note {
+    font-size: 12px;
+    color: #6E6E73;
+    margin-top: 8px;
+}
+
+/* Responsive modal */
+@media (max-width: 768px) {
+    .modal-content, .studio-modal-card {
+        width: 95%;
+        padding: 24px;
+        max-height: 95vh;
+    }
+    
+    .studio-two-col {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Ensure click handler works */
+.modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 9999;
+}

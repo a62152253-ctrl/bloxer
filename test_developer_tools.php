@@ -13,9 +13,7 @@ try {
     
     // Check if user is logged in
     if (!$auth->isLoggedIn()) {
-        echo "<p style='color: red;'>✗ User not logged in</p>";
-        echo "<p><a href='controllers/auth/login.php'>Please login first</a></p>";
-        exit();
+        SecurityUtils::safeRedirect('../auth/login.php', 403, 'Unauthorized access');
     }
     
     $user = $auth->getCurrentUser();
@@ -23,9 +21,7 @@ try {
     
     // Check if user is developer
     if (!$auth->isDeveloper()) {
-        echo "<p style='color: red;'>✗ User is not a developer</p>";
-        echo "<p>Current user type: " . htmlspecialchars($user['user_type'] ?? 'unknown') . "</p>";
-        exit();
+        SecurityUtils::safeRedirect('../auth/login.php', 403, 'Developer access required');
     }
     
     echo "<p style='color: green;'>✓ User is developer</p>";

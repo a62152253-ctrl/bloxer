@@ -86,8 +86,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $_POST['action'] === 'update_app') 
             
             if ($stmt->execute()) {
                 $_SESSION['success_message'] = "App updated to version {$target_version['version']} successfully!";
-                header("Location: app_updates.php?id=$app_id");
-                exit();
+                SecurityUtils::safeRedirect("app_updates.php?id=$app_id", 302, 'App updated successfully');
             } else {
                 $_SESSION['form_errors'] = ['Failed to update app: ' . $stmt->error];
             }
@@ -129,8 +128,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $_POST['action'] === 'install_app')
                 
                 if ($stmt->execute()) {
                     $_SESSION['success_message'] = "App installed successfully!";
-                    header("Location: app_updates.php?id=$app_id");
-                    exit();
+                    SecurityUtils::safeRedirect("app_updates.php?id=$app_id", 302, 'App installed successfully');
                 } else {
                     $_SESSION['form_errors'] = ['Failed to install app: ' . $stmt->error];
                 }

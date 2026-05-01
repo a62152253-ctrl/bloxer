@@ -99,8 +99,16 @@ class AppsAPI extends APIBase {
         ];
         $order_by = $sort_options[$sort] ?? $sort_options['popular'];
         
+        // Whitelist sort options to prevent SQL injection
+        $allowed_sorts = ['a.total_downloads DESC, a.rating DESC', 'a.published_at DESC', 'a.rating DESC, a.total_downloads DESC', 'a.title ASC', 'a.price ASC', 'a.price DESC', 'a.updated_at DESC'];
+        if (!in_array($order_by, $allowed_sorts)) {
+            $order_by = 'a.total_downloads DESC, a.rating DESC';
+        }
+        
         $sql = "
-            SELECT a.*, u.username as developer_name, u.avatar_url as developer_avatar,
+            SELECT a.id, a.title, a.short_description, a.category, a.price, a.rating, a.total_downloads, 
+                   a.published_at, a.updated_at, a.featured, a.featured_at, a.thumbnail, a.slug,
+                   u.username as developer_name, u.avatar_url as developer_avatar,
                    c.name as category_name, c.icon as category_icon
             FROM apps a
             JOIN projects p ON a.project_id = p.id
@@ -123,6 +131,30 @@ class AppsAPI extends APIBase {
         $stmt->execute();
         $apps = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
         
+        // Sanitize app data for output
+        $safe_apps = [];
+        foreach ($apps as $app) {
+            $safe_apps[] = [
+                'id' => (int)$app['id'],
+                'title' => htmlspecialchars($app['title']),
+                'short_description' => htmlspecialchars($app['short_description']),
+                'category' => htmlspecialchars($app['category']),
+                'price' => (float)$app['price'],
+                'rating' => (float)$app['rating'],
+                'total_downloads' => (int)$app['total_downloads'],
+                'published_at' => $app['published_at'],
+                'updated_at' => $app['updated_at'],
+                'featured' => (bool)$app['featured'],
+                'featured_at' => $app['featured_at'],
+                'thumbnail' => htmlspecialchars($app['thumbnail']),
+                'slug' => htmlspecialchars($app['slug']),
+                'developer_name' => htmlspecialchars($app['developer_name']),
+                'developer_avatar' => htmlspecialchars($app['developer_avatar']),
+                'category_name' => htmlspecialchars($app['category_name']),
+                'category_icon' => htmlspecialchars($app['category_icon'])
+            ];
+        }
+        
         // Get total count for pagination
         $count_sql = "
             SELECT COUNT(*) as total
@@ -140,7 +172,7 @@ class AppsAPI extends APIBase {
         
         $this->sendJSONResponse([
             'success' => true,
-            'apps' => $apps,
+            'apps' => $safe_apps,
             'pagination' => $this->buildPaginationResponse($total, $pagination['page'], $pagination['limit'])
         ]);
     }
@@ -150,7 +182,9 @@ class AppsAPI extends APIBase {
      */
     private function getFeaturedApps() {
         $stmt = $this->conn->prepare("
-            SELECT a.*, u.username as developer_name, u.avatar_url as developer_avatar,
+            SELECT a.id, a.title, a.short_description, a.category, a.price, a.rating, a.total_downloads,
+                   a.thumbnail, a.slug, a.featured_at,
+                   u.username as developer_name, u.avatar_url as developer_avatar,
                    c.name as category_name, c.icon as category_icon
             FROM apps a
             JOIN projects p ON a.project_id = p.id
@@ -164,9 +198,30 @@ class AppsAPI extends APIBase {
         $stmt->execute();
         $apps = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
         
+        // Sanitize featured apps for output
+        $safe_apps = [];
+        foreach ($apps as $app) {
+            $safe_apps[] = [
+                'id' => (int)$app['id'],
+                'title' => htmlspecialchars($app['title']),
+                'short_description' => htmlspecialchars($app['short_description']),
+                'category' => htmlspecialchars($app['category']),
+                'price' => (float)$app['price'],
+                'rating' => (float)$app['rating'],
+                'total_downloads' => (int)$app['total_downloads'],
+                'thumbnail' => htmlspecialchars($app['thumbnail']),
+                'slug' => htmlspecialchars($app['slug']),
+                'featured_at' => $app['featured_at'],
+                'developer_name' => htmlspecialchars($app['developer_name']),
+                'developer_avatar' => htmlspecialchars($app['developer_avatar']),
+                'category_name' => htmlspecialchars($app['category_name']),
+                'category_icon' => htmlspecialchars($app['category_icon'])
+            ];
+        }
+        
         $this->sendJSONResponse([
             'success' => true,
-            'apps' => $apps
+            'apps' => $safe_apps
         ]);
     }
     
